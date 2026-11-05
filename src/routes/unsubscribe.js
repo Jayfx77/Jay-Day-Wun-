@@ -1,4 +1,4 @@
-// One-click unsubscribe from notification emails (messages, viewings and listing updates). The secret token in the link is the authorisation,
+// One-click unsubscribe from notification emails (messages, viewings, listing and verification updates). The secret token in the link is the authorisation,
 // so these routes need no login (and no CSRF token, which mail clients can't send).
 const express = require('express');
 

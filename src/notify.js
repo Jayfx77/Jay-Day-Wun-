@@ -3,7 +3,7 @@
 const crypto = require('crypto');
 const config = require('./config');
 const {
-  newMessageEmail, viewingRequestedEmail, viewingStatusEmail, listingDecisionEmail, listingsPublishedEmail,
+  newMessageEmail, viewingRequestedEmail, viewingStatusEmail, listingDecisionEmail, verificationEmail,
 } = require('./emails');
 
 const shorten = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
@@ -116,21 +116,19 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
       }
     },
 
-    // Pending listings published because the landlord was just verified (email only: the
-    // verification SMS already tells them their listings are live).
-    listingsPublished({ landlordId, listingIds }) {
-      const listings = listingIds.map((id) => getListingRow.get(id)).filter(Boolean);
-      if (!listings.length) return;
-      email(landlordId, 'listing', listings.map((l) => l.id).join(','), (u, unsub) => listingsPublishedEmail({
-        listings, recipientName: u.name.split(' ')[0], unsubscribeUrl: unsub,
-        urls: { listing: (id) => url(`/listings/${id}`), dashboard: url('/dashboard') },
-      }));
-    },
-
-    verificationResult({ userId, status, note }) {
+    // publishedIds: pending listings that went live because of this verification.
+    verificationResult({ userId, status, note, publishedIds = [] }) {
       alert(userId, 'verification', null, status === 'verified'
         ? `${site}: Your Ghana Card is verified. Your listings now show the verified badge and publish instantly.`
         : `${site}: We couldn't verify your Ghana Card${note ? `: ${shorten(note, 120)}` : '.'} Please resubmit: ${url('/account')}`);
+      const published = publishedIds.map((id) => getListingRow.get(id)).filter(Boolean);
+      email(userId, 'verification', status, (u, unsub) => verificationEmail({
+        status, note, published, recipientName: u.name.split(' ')[0], unsubscribeUrl: unsub,
+        urls: {
+          account: url('/account'), dashboard: url('/dashboard'), newListing: url('/listings/new'),
+          listing: (id) => url(`/listings/${id}`),
+        },
+      }));
     },
   };
 }

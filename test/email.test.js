@@ -106,7 +106,7 @@ test('unsubscribe link: GET only confirms, POST unsubscribes, and can be undone'
   const token = emailsTo('ama@test.gh')[0].headers['List-Unsubscribe'].match(/token=([\w-]+)/)[1];
   let r = await client().get(`/unsubscribe?token=${token}`);
   assert.equal(r.status, 200);
-  assert.match(r.text, /Stop notification emails \(messages, viewings and listing updates\) to <strong>a•+@test\.gh<\/strong>/);
+  assert.match(r.text, /Stop notification emails \(messages, viewings, listing and verification updates\) to <strong>a•+@test\.gh<\/strong>/);
   assert.equal(db.prepare("SELECT email_alerts FROM users WHERE email = 'ama@test.gh'").get().email_alerts, 1, 'GET does not unsubscribe');
 
   // RFC 8058 one-click POST from the mail client: no cookies, no CSRF token.
@@ -128,7 +128,7 @@ test('the account page toggle turns message emails off', async () => {
   const c = client();
   await c.login('kojo@test.gh');
   const _csrf = await c.csrf('/account');
-  assert.match((await c.get('/account')).text, /Email me about new messages, viewing requests and listing approvals/);
+  assert.match((await c.get('/account')).text, /Email me about new messages, viewing requests, listing approvals and ID verification/);
   await c.post('/account', { _csrf, name: 'Kojo Tenant', phone: '0271000004', sms_alerts: '1' });
   assert.equal(db.prepare("SELECT email_alerts FROM users WHERE email = 'kojo@test.gh'").get().email_alerts, 0);
 });

@@ -2,12 +2,12 @@
 <section class="wrap narrow-sm section center">
   <h1 class="h2">Email notifications</h1>
   <% if (done) { %>
-    <p class="lead">You won't get notification emails (messages, viewings and listing updates) at <strong><%= email %></strong> any more.</p>
+    <p class="lead">You won't get notification emails (messages, viewings, listing and verification updates) at <strong><%= email %></strong> any more.</p>
     <p class="small muted">You'll still receive password-reset emails and, if you've turned them on, SMS alerts.</p>
     <form method="post" action="/unsubscribe"><input type="hidden" name="token" value="<%= token %>"><input type="hidden" name="action" value="resubscribe"><button class="btn btn-ghost">Turn these emails back on</button></form>
   <% } else { %>
     <% if (locals.resubscribed) { %><div class="flash" role="status">Email notifications are back on.</div><% } %>
-    <p class="lead">Stop notification emails (messages, viewings and listing updates) to <strong><%= email %></strong>?</p>
+    <p class="lead">Stop notification emails (messages, viewings, listing and verification updates) to <strong><%= email %></strong>?</p>
     <form method="post" action="/unsubscribe"><input type="hidden" name="token" value="<%= token %>"><button class="btn">Unsubscribe</button></form>
   <% } %>
   <p class="small"><a href="/account">Manage all notification settings</a></p>
