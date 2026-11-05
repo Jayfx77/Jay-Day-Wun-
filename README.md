@@ -64,7 +64,7 @@ The repo includes a Render blueprint (`render.yaml`). It sets up a Node web serv
 
 **Your own domain:** in the service's **Settings → Custom Domains**, add your domain and create the DNS record Render shows you. HTTPS is set up automatically. Then set `BASE_URL` to `https://your-domain` so links in texts and emails use it.
 
-**Backups:** Render takes daily snapshots of persistent disks, which you can restore from the **Disks** page. For an extra copy, open the service's **Shell** and run `sqlite3 /var/data/ofie.db ".backup /var/data/backup.db"`, then download it, or schedule your own off-site copies.
+**Backups:** Render takes daily snapshots of persistent disks, which you can restore from the **Disks** page. For an extra copy, open the service's **Shell** and run `node -e "require('better-sqlite3')('/var/data/ofie.db').backup('/var/data/backup.db').then(() => console.log('done'))"`, then copy `backup.db` somewhere safe, or schedule your own off-site copies.
 
 Each push to `main` redeploys the site automatically. Database updates run on startup.
 
