@@ -214,6 +214,11 @@ const MIGRATIONS = [
     PRIMARY KEY (saved_search_id, listing_id)
   );
   `,
+  `
+  -- Which channels each saved search alerts on. SMS is opt-in (texts cost money).
+  ALTER TABLE saved_searches ADD COLUMN email INTEGER NOT NULL DEFAULT 1;
+  ALTER TABLE saved_searches ADD COLUMN sms INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 function migrate(db) {

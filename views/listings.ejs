@@ -50,9 +50,15 @@
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <% Object.entries(filters).forEach(([k, v]) => { [].concat(v).forEach(x => { %><input type="hidden" name="<%= k %>" value="<%= x %>"><% }) }) %>
             <select name="frequency" aria-label="How often">
-              <option value="instant">Email me new matches right away</option>
-              <option value="daily">Email me a daily summary</option>
+              <option value="instant">Tell me about new matches right away</option>
+              <option value="daily">Send me a daily summary</option>
             </select>
+            <label class="check small"><input type="checkbox" name="alert_email" value="1" checked> Email</label>
+            <% if (user.phone_verified) { %>
+              <label class="check small"><input type="checkbox" name="alert_sms" value="1"> SMS</label>
+            <% } else { %>
+              <a class="small" href="/verify-phone?next=/listings">Verify phone for SMS</a>
+            <% } %>
             <button class="btn btn-sm">🔔 Save search</button>
           </form>
         <% } else { %>

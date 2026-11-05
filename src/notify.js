@@ -2,7 +2,7 @@
 // alert preferences and sends without blocking the request.
 const crypto = require('crypto');
 const config = require('./config');
-const { describeDevice, accraTime } = require('./helpers');
+const { describeDevice, accraTime, cedis } = require('./helpers');
 const {
   savedSearchEmail, passwordChangedEmail, newMessageEmail, viewingRequestedEmail, viewingStatusEmail, listingDecisionEmail, verificationEmail,
 } = require('./emails');
@@ -70,7 +70,18 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
 
   return {
     // New listings matching a saved search. Respects the user's email setting.
-    savedSearchMatches({ search, description, listings, total, searchPath }) {
+    // channels: { email, sms } decided by the alert job.
+    savedSearchMatches({ search, description, listings, total, searchPath, channels = { email: true, sms: false } }) {
+      if (channels.sms) {
+        const u = getUser.get(search.user_id);
+        const first = listings[0];
+        const what = `${first.bedrooms ? `${first.bedrooms}-bed` : 'Single room'} in ${first.neighbourhood}`;
+        const body = total === 1
+          ? `${site}: New home for your search "${shorten(description, 45)}": ${cedis(first.rent_ghs)}/mo, ${what}. ${url(`/listings/${first.id}`)}`
+          : `${site}: ${total} new homes for your search "${shorten(description, 45)}", from ${cedis(Math.min(...listings.map((l) => l.rent_ghs)))}/mo. See them: ${url(searchPath)}`;
+        sms.send({ userId: u.id, phone: u.phone, kind: 'saved_search', ref: search.id, body: `${body} Manage alerts: ${url('/dashboard')}` });
+      }
+      if (!channels.email) return;
       email(search.user_id, 'saved_search', search.id, (u, unsub) => savedSearchEmail({
         recipientName: u.name.split(' ')[0], description, listings, total, unsubscribeUrl: unsub,
         urls: {

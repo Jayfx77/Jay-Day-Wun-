@@ -29,6 +29,8 @@ module.exports = {
     hubtelClientSecret: process.env.HUBTEL_CLIENT_SECRET || '',
     // Don't text the same person about the same chat more than once in this window.
     messageCooldownMinutes: Number(process.env.SMS_MESSAGE_COOLDOWN_MINUTES) || 30,
+    // Most saved-search texts one person can get in 24 hours (texts cost money; email has no limit).
+    searchAlertsPerDay: Number(process.env.SMS_SEARCH_ALERTS_PER_DAY) || 3,
   },
   // Email (optional): password-reset links. Leave SMTP_HOST empty to send reset codes by SMS only.
   // Email alerts for new messages: at most one email per conversation in this window.
