@@ -8,7 +8,7 @@ const { normalisePhone } = require('../helpers');
 
 const safeNext = (n) => (typeof n === 'string' && /^\/(?![/\\])/.test(n) ? n : '/dashboard');
 
-module.exports = (db, { sms, mailer, phone: phoneCheck }) => {
+module.exports = (db, { sms, mailer, notify, phone: phoneCheck }) => {
   const r = express.Router();
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -96,7 +96,7 @@ module.exports = (db, { sms, mailer, phone: phoneCheck }) => {
   const activeReset = db.prepare(`SELECT * FROM password_resets WHERE user_id = ? AND used_at IS NULL AND expires_at > ?
     ORDER BY id DESC LIMIT 1`);
 
-  function finishReset(req, res, reset, password, password2, renderError) {
+  function finishReset(req, res, reset, password, password2, renderError, method) {
     if (password.length < 8) return renderError('New password must be at least 8 characters.');
     if (password !== password2) return renderError('Passwords do not match.');
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(reset.user_id);
@@ -106,11 +106,7 @@ module.exports = (db, { sms, mailer, phone: phoneCheck }) => {
       db.prepare('UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL').run(now(), user.id);
       db.prepare('DELETE FROM sessions WHERE user_id = ?').run(user.id);
     })();
-    // Security notice, sent even if the user turned off alerts.
-    sms.send({
-      userId: user.id, phone: user.phone, kind: 'security',
-      body: `${config.siteName}: Your password was just changed. If this wasn't you, contact ${config.supportEmail} immediately.`,
-    });
+    notify.passwordChanged({ userId: user.id, method, userAgent: req.get('user-agent'), ip: req.ip });
     createSession(db, res, user.id);
     res.redirect(`/dashboard?ok=${encodeURIComponent('Password updated. You are now logged in.')}`);
   }
@@ -173,7 +169,7 @@ module.exports = (db, { sms, mailer, phone: phoneCheck }) => {
     if (token) {
       const reset = db.prepare('SELECT * FROM password_resets WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?').get(sha(token), now());
       if (!reset) return fail('That reset link has expired or was already used. Request a new one.');
-      return finishReset(req, res, reset, password, String(req.body.password2 || ''), fail);
+      return finishReset(req, res, reset, password, String(req.body.password2 || ''), fail, 'reset_link');
     }
 
     const code = String(req.body.code || '').replace(/\D/g, '');
@@ -185,7 +181,7 @@ module.exports = (db, { sms, mailer, phone: phoneCheck }) => {
       db.prepare('UPDATE password_resets SET attempts = attempts + 1 WHERE id = ?').run(reset.id);
       return fail('That code is wrong or has expired. Request a new one.');
     }
-    finishReset(req, res, reset, password, String(req.body.password2 || ''), fail);
+    finishReset(req, res, reset, password, String(req.body.password2 || ''), fail, 'reset_code');
   });
 
   // ---------- Phone verification ----------

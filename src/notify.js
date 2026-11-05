@@ -2,8 +2,9 @@
 // alert preferences and sends without blocking the request.
 const crypto = require('crypto');
 const config = require('./config');
+const { describeDevice, accraTime } = require('./helpers');
 const {
-  newMessageEmail, viewingRequestedEmail, viewingStatusEmail, listingDecisionEmail, verificationEmail,
+  passwordChangedEmail, newMessageEmail, viewingRequestedEmail, viewingStatusEmail, listingDecisionEmail, verificationEmail,
 } = require('./emails');
 
 const shorten = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
@@ -25,10 +26,15 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
   }
 
   // Sends an alert email if email is configured and the user hasn't opted out.
-  function email(userId, kind, ref, build) {
+  // security: true sends regardless of the user's email setting, without unsubscribe headers.
+  function email(userId, kind, ref, build, { security = false } = {}) {
     if (!mailer.enabled) return;
     const u = getUser.get(userId);
-    if (!u || !u.email_alerts || u.suspended) return;
+    if (!u || (!security && (!u.email_alerts || u.suspended))) return;
+    if (security) {
+      mailer.send({ ...build(u, null), to: u.email, userId: u.id, kind, ref });
+      return;
+    }
     const unsub = unsubscribeUrl(u);
     const msg = build(u, unsub);
     mailer.send({
@@ -63,6 +69,21 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
   }
 
   return {
+    // Security notice by SMS and email, sent even if the user turned alerts off.
+    // method: 'reset_code' | 'reset_link' | 'account'.
+    passwordChanged({ userId, method, userAgent, ip }) {
+      const u = getUser.get(userId);
+      if (!u) return;
+      sms.send({
+        userId: u.id, phone: u.phone, kind: 'security',
+        body: `${site}: Your password was just changed. If this wasn't you, reset it now at ${url('/forgot')} and contact ${config.supportEmail}.`,
+      });
+      email(u.id, 'security', 'password', (user) => passwordChangedEmail({
+        recipientName: user.name.split(' ')[0], method, when: accraTime(), device: describeDevice(userAgent), ip,
+        urls: { forgot: url('/forgot') },
+      }), { security: true });
+    },
+
     newMessage({ conversationId, recipientId, senderName, listingTitle, body }) {
       emailNewMessage({ conversationId, recipientId, senderName, listingTitle, body });
       // One text per conversation per cooldown window, so a busy chat doesn't flood the phone.

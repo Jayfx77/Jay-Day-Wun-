@@ -29,6 +29,22 @@ const validGhanaCard = (s) => /^GHA-\d{9}-\d$/.test(String(s || '').trim().toUpp
 // GhanaPost GPS digital address, e.g. GA-123-4567 or GA-1234-5678
 const validGps = (s) => /^[A-Z]{2}-\d{3,4}-\d{3,4}$/.test(String(s || '').trim().toUpperCase());
 
+// Rough, human-readable device description from a User-Agent string, e.g. "Chrome on Android".
+function describeDevice(ua = '') {
+  const s = String(ua);
+  const browser = /Edg\//.test(s) ? 'Edge' : /OPR\/|Opera/.test(s) ? 'Opera' : /SamsungBrowser/.test(s) ? 'Samsung Internet'
+    : /Firefox\//.test(s) ? 'Firefox' : /Chrome\//.test(s) ? 'Chrome' : /Safari\//.test(s) ? 'Safari' : null;
+  const os = /Android/.test(s) ? 'Android' : /iPhone|iPad|iPod/.test(s) ? 'iPhone/iPad' : /Windows/.test(s) ? 'Windows'
+    : /Mac OS X|Macintosh/.test(s) ? 'Mac' : /Linux/.test(s) ? 'Linux' : null;
+  if (browser && os) return `${browser} on ${os}`;
+  return browser || os || 'Unknown device';
+}
+
+// "Thursday 5 November 2026 at 13:45 GMT" (Ghana is GMT all year).
+const accraTime = (d = new Date()) => `${d.toLocaleDateString('en-GB', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+}).replace(',', '')} at ${d.toISOString().slice(11, 16)} GMT`;
+
 const totalUpfront = (l) => l.rent_ghs * l.advance_months;
 
 function locals(app) {
@@ -42,4 +58,4 @@ function locals(app) {
   });
 }
 
-module.exports = { cedis, timeAgo, normalisePhone, prettyPhone, validGhanaCard, validGps, totalUpfront, locals };
+module.exports = { describeDevice, accraTime, cedis, timeAgo, normalisePhone, prettyPhone, validGhanaCard, validGps, totalUpfront, locals };

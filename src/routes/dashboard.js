@@ -69,6 +69,7 @@ module.exports = (db, { notify, phone: phoneCheck }) => {
       db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(newPw), req.user.id);
       // Sign out other devices.
       db.prepare("DELETE FROM sessions WHERE user_id = ? AND csrf != ?").run(req.user.id, req.csrfToken);
+      notify.passwordChanged({ userId: req.user.id, method: 'account', userAgent: req.get('user-agent'), ip: req.ip });
     }
     if (phoneChanged) {
       phoneCheck.sendCode({ ...req.user, phone });
