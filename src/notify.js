@@ -2,7 +2,9 @@
 // alert preferences and sends without blocking the request.
 const crypto = require('crypto');
 const config = require('./config');
-const { newMessageEmail, viewingRequestedEmail, viewingStatusEmail } = require('./emails');
+const {
+  newMessageEmail, viewingRequestedEmail, viewingStatusEmail, listingDecisionEmail, listingsPublishedEmail,
+} = require('./emails');
 
 const shorten = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
@@ -41,6 +43,7 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
     FROM viewings v JOIN listings l ON l.id = v.listing_id JOIN users t ON t.id = v.tenant_id JOIN users ll ON ll.id = l.landlord_id
     WHERE v.id = ?`);
   const uidHost = new URL(config.baseUrl).hostname;
+  const getListingRow = db.prepare('SELECT id, title, neighbourhood, rent_ghs, advance_months FROM listings WHERE id = ?');
 
   function emailNewMessage({ conversationId, recipientId, senderName, listingTitle, body }) {
     // One email per conversation per cooldown window; the email links to the full chat.
@@ -102,7 +105,26 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
         reject: `Your listing "${shorten(listingTitle, 50)}" was not approved${note ? `: ${shorten(note, 120)}` : '.'} Edit and resubmit: ${url(`/listings/${listingId}/edit`)}`,
         takedown: `Your listing "${shorten(listingTitle, 50)}" was removed${note ? `: ${shorten(note, 120)}` : '.'} Contact ${config.supportEmail} with questions.`,
       }[action];
-      if (text) alert(landlordId, 'listing', listingId, `${site}: ${text}`);
+      if (!text) return;
+      alert(landlordId, 'listing', listingId, `${site}: ${text}`);
+      const listing = getListingRow.get(listingId);
+      if (listing) {
+        email(landlordId, 'listing', listingId, (u, unsub) => listingDecisionEmail({
+          listing, action, note, recipientName: u.name.split(' ')[0], unsubscribeUrl: unsub,
+          urls: { listing: url(`/listings/${listingId}`), edit: url(`/listings/${listingId}/edit`) },
+        }));
+      }
+    },
+
+    // Pending listings published because the landlord was just verified (email only: the
+    // verification SMS already tells them their listings are live).
+    listingsPublished({ landlordId, listingIds }) {
+      const listings = listingIds.map((id) => getListingRow.get(id)).filter(Boolean);
+      if (!listings.length) return;
+      email(landlordId, 'listing', listings.map((l) => l.id).join(','), (u, unsub) => listingsPublishedEmail({
+        listings, recipientName: u.name.split(' ')[0], unsubscribeUrl: unsub,
+        urls: { listing: (id) => url(`/listings/${id}`), dashboard: url('/dashboard') },
+      }));
     },
 
     verificationResult({ userId, status, note }) {
