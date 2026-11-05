@@ -50,3 +50,14 @@ services:
         sync: false
       - key: HUBTEL_CLIENT_SECRET
         sync: false
+      # Email (optional): message alerts and password-reset links. Leave SMTP_HOST empty to turn email off.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false

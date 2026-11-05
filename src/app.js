@@ -13,8 +13,9 @@ function createApp(db, opts = {}) {
   const app = express();
   const sms = opts.sms || createSms(db);
   const ctx = {
-    sms, notify: createNotifier(db, sms), mailer: opts.mailer || createMailer(), phone: createPhoneVerification(db, sms),
+    sms, mailer: opts.mailer || createMailer(db), phone: createPhoneVerification(db, sms),
   };
+  ctx.notify = createNotifier(db, sms, ctx.mailer);
   app.locals.ctx = ctx;
   app.locals.emailEnabled = ctx.mailer.enabled;
   app.locals.smsProvider = sms.provider;
@@ -64,6 +65,7 @@ function createApp(db, opts = {}) {
   });
 
   app.use(require('./routes/public')(db));
+  app.use(require('./routes/unsubscribe')(db));
   app.use(require('./routes/auth')(db, ctx));
   app.use(require('./routes/listings')(db, ctx));
   app.use(require('./routes/dashboard')(db, ctx));

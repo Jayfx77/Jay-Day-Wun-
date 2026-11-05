@@ -165,6 +165,24 @@ const MIGRATIONS = [
   );
   CREATE INDEX idx_phone_codes_user ON phone_codes(user_id, id);
   `,
+  `
+  ALTER TABLE users ADD COLUMN email_alerts INTEGER NOT NULL DEFAULT 1;
+  ALTER TABLE users ADD COLUMN unsubscribe_token TEXT;
+  CREATE UNIQUE INDEX idx_users_unsub ON users(unsubscribe_token);
+
+  CREATE TABLE email_log (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    email TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    ref TEXT,
+    subject TEXT NOT NULL,
+    status TEXT NOT NULL,
+    error TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX idx_email_user ON email_log(user_id, kind, ref, created_at);
+  `,
 ];
 
 function migrate(db) {

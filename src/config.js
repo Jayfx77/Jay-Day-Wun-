@@ -31,6 +31,8 @@ module.exports = {
     messageCooldownMinutes: Number(process.env.SMS_MESSAGE_COOLDOWN_MINUTES) || 30,
   },
   // Email (optional): password-reset links. Leave SMTP_HOST empty to send reset codes by SMS only.
+  // Email alerts for new messages: at most one email per conversation in this window.
+  emailMessageCooldownMinutes: Number(process.env.EMAIL_MESSAGE_COOLDOWN_MINUTES) || 15,
   smtp: {
     host: process.env.SMTP_HOST || '',
     port: Number(process.env.SMTP_PORT) || 587,
