@@ -1,3 +1,4 @@
+require('./src/loadEnv'); // must come first, before settings are read
 const config = require('./src/config');
 const db = require('./src/db').open();
 const { createApp } = require('./src/app');

@@ -1,0 +1,5 @@
+{
+  "files.associations": { "*.ejs": "html" },
+  "files.exclude": { "node_modules": true },
+  "search.exclude": { "node_modules": true, "data": true, "uploads": true, "private": true }
+}
