@@ -29,8 +29,9 @@ Ofie Accra is a web platform where tenants in Accra find homes and deal **direct
 **Email notifications**
 - When email is set up (see *Email setup*), users get an email for each new message, with a preview and a "Reply" button. Follow-ups in the same chat within 15 minutes don't trigger another email.
 - Viewing emails: landlords get one when a tenant asks to view, showing the date, time window, tenant's phone number and note. When a viewing is confirmed, the tenant gets the address, GhanaPost GPS address, the landlord's phone number and a **calendar invite**. Declined or cancelled viewings email the other person, and tenants get a link to similar homes.
-- Listing emails: landlords are emailed when an admin approves their listing ("Your listing is live"), rejects it (with the reason and an **Edit and resubmit** button), or takes it down (with the reason). 
+- Listing emails: landlords are emailed when an admin approves their listing ("Your listing is live"), rejects it (with the reason and an **Edit and resubmit** button), or takes it down (with the reason).
 - Ghana Card emails: landlords are emailed when their Ghana Card is **verified** (with any listings that went live as a result, all in one email) or **not accepted** (with the reason, tips for a clearer upload, and an **Upload your Ghana Card again** button). The card number is never included in emails.
+- Password-change emails: whenever a password is changed (from the account page, or with a reset code or link), the user gets a **security notice** by email and SMS saying when, how, the device and the IP address, with a **This wasn't me: secure my account** button. These are always sent, even if the user has turned other emails and texts off.
 - Every email has an unsubscribe link, and Gmail and Yahoo show their own "Unsubscribe" button for it. Users can also switch emails off on their account page. Password-reset emails are always sent.
 
 **Admins** (`/admin`)

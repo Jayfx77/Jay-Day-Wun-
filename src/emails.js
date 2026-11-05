@@ -13,8 +13,10 @@ function layout({ preheader, bodyHtml, unsubscribeUrl }) {
 <tr><td style="padding:24px;font-size:15px;line-height:1.55">${bodyHtml}</td></tr>
 <tr><td style="padding:16px 24px;border-top:1px solid #e2e6e4;font-size:12px;color:#5f6b65">
 Rent directly from landlords in Accra. Never pay before viewing a property.<br>
-<a href="${esc(unsubscribeUrl)}" style="color:#5f6b65">Stop these emails</a> &middot;
-<a href="${esc(config.baseUrl)}/account" style="color:#5f6b65">Notification settings</a>
+${unsubscribeUrl
+    ? `<a href="${esc(unsubscribeUrl)}" style="color:#5f6b65">Stop these emails</a> &middot;
+<a href="${esc(config.baseUrl)}/account" style="color:#5f6b65">Notification settings</a>`
+    : 'This is a security notice about your account. It is always sent, even if you have turned off other emails.'}
 </td></tr></table></td></tr></table></body></html>`;
 }
 
@@ -75,8 +77,9 @@ ${detailsText(rows)}
 ${cta.label}: ${cta.url}
 ${tip ? `\n${tip}\n` : ''}
 --
-To stop these emails: ${unsubscribeUrl}
-Notification settings: ${config.baseUrl}/account`;
+${unsubscribeUrl
+    ? `To stop these emails: ${unsubscribeUrl}\nNotification settings: ${config.baseUrl}/account`
+    : 'This is a security notice about your account. It is always sent, even if you have turned off other emails.'}`;
   const html = layout({
     preheader,
     unsubscribeUrl,
@@ -252,6 +255,29 @@ function verificationEmail({ status, note, published = [], recipientName, urls, 
   };
 }
 
+// ---------- Security: password changed ----------
+const HOW = {
+  reset_code: 'using a reset code sent by SMS',
+  reset_link: 'using a reset link sent by email',
+  account: 'from your account page',
+};
+
+// Always sent (no unsubscribe): it is how people find out someone else got into their account.
+function passwordChangedEmail({ recipientName, method, when, device, ip, urls }) {
+  return {
+    subject: `Your ${config.siteName} password was changed`,
+    ...card({
+      recipientName,
+      preheader: "If this wasn't you, secure your account now.",
+      intro: `Your password was changed ${HOW[method] || ''}. For your safety, you have been signed out everywhere else.`.replace('  ', ' '),
+      rows: [['When', when], ['Device', device], ['IP address', ip]],
+      cta: { label: "This wasn't me: secure my account", url: urls.forgot },
+      tip: `If you made this change, you don't need to do anything. If you didn't, reset your password straight away using the button above, then email ${config.supportEmail} so we can check your account and listings.`,
+    }),
+  };
+}
+
 module.exports = {
+  passwordChangedEmail,
   newMessageEmail, viewingRequestedEmail, viewingStatusEmail, viewingIcs, listingDecisionEmail, verificationEmail, esc,
 };
