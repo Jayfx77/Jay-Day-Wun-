@@ -9,6 +9,8 @@ module.exports = {
   siteName: process.env.SITE_NAME || 'Ofie Accra',
   // Render sets RENDER_EXTERNAL_URL automatically (e.g. https://ofie-accra.onrender.com).
   baseUrl: process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || `http://localhost:${Number(process.env.PORT) || 3000}`,
+  // When BASE_URL is set (your own domain), visitors on any other host are redirected to it.
+  canonicalHost: process.env.BASE_URL ? new URL(process.env.BASE_URL).host : null,
   dbFile: process.env.DB_FILE || path.join(root, 'data', 'ofie.db'),
   uploadDir: process.env.UPLOAD_DIR || path.join(root, 'uploads'),
   privateDir: process.env.PRIVATE_DIR || path.join(root, 'private'),

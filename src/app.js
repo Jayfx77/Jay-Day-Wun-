@@ -39,6 +39,14 @@ function createApp(db, opts = {}) {
     crossOriginEmbedderPolicy: false,
   }));
 
+  // Send visitors on the default onrender.com address (or any other host) to the custom domain.
+  if (config.canonicalHost) {
+    app.use((req, res, next) => {
+      if (req.get('host') === config.canonicalHost || req.path === '/healthz' || !['GET', 'HEAD'].includes(req.method)) return next();
+      res.redirect(301, `${config.baseUrl.replace(/\/$/, '')}${req.originalUrl}`);
+    });
+  }
+
   app.use('/static', express.static(path.join(__dirname, '..', 'public'), { maxAge: config.isProd ? '7d' : 0 }));
   app.use('/uploads', express.static(config.uploadDir, { maxAge: '30d', fallthrough: true }));
   app.use(express.urlencoded({ extended: false, limit: '200kb' }));
