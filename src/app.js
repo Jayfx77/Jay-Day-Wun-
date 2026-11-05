@@ -4,9 +4,17 @@ const helmet = require('helmet');
 const config = require('./config');
 const { sessionMiddleware } = require('./auth');
 const helpers = require('./helpers');
+const { createSms } = require('./sms');
+const { createNotifier } = require('./notify');
+const { createMailer } = require('./mailer');
 
-function createApp(db) {
+function createApp(db, opts = {}) {
   const app = express();
+  const sms = opts.sms || createSms(db);
+  const ctx = { sms, notify: createNotifier(db, sms), mailer: opts.mailer || createMailer() };
+  app.locals.ctx = ctx;
+  app.locals.emailEnabled = ctx.mailer.enabled;
+  app.locals.smsProvider = sms.provider;
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, '..', 'views'));
   app.set('trust proxy', 1);
@@ -45,11 +53,11 @@ function createApp(db) {
   });
 
   app.use(require('./routes/public')(db));
-  app.use(require('./routes/auth')(db));
-  app.use(require('./routes/listings')(db));
-  app.use(require('./routes/dashboard')(db));
-  app.use(require('./routes/messages')(db));
-  app.use('/admin', require('./routes/admin')(db));
+  app.use(require('./routes/auth')(db, ctx));
+  app.use(require('./routes/listings')(db, ctx));
+  app.use(require('./routes/dashboard')(db, ctx));
+  app.use(require('./routes/messages')(db, ctx));
+  app.use('/admin', require('./routes/admin')(db, ctx));
 
   app.get('/healthz', (req, res) => res.json({ ok: true }));
 

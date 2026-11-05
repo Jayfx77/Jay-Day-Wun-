@@ -81,6 +81,18 @@
     </table></div>
   <% } else { %><p class="muted">No open reports.</p><% } %>
 
+  <h2 class="h3">SMS alerts (last 24 hours)</h2>
+  <p>Provider: <strong><%= smsProvider %></strong><% if (smsProvider === 'log') { %> <span class="badge badge-gold">texts are printed to the server log, not sent — set SMS_PROVIDER</span><% } %>
+    · <%= smsStats.delivered || 0 %> delivered · <%= smsStats.failed || 0 %> failed<% if (smsStats.queued) { %> · <%= smsStats.queued %> sending<% } %></p>
+  <% if (smsFailures.length) { %>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>When</th><th>To</th><th>Type</th><th>Error</th></tr></thead>
+      <tbody><% smsFailures.forEach(f => { %>
+        <tr><td class="small"><%= timeAgo(f.created_at) %></td><td><%= f.name || '' %><br><span class="small muted"><%= prettyPhone(f.phone) %></span></td><td><%= f.kind %></td><td class="small"><%= f.error %></td></tr>
+      <% }) %></tbody>
+    </table></div>
+  <% } %>
+
   <h2 class="h3">Users</h2>
   <form method="get" action="/admin" class="row-btns"><input name="q" value="<%= q %>" placeholder="Search name, email or phone"><button class="btn btn-sm">Search</button></form>
   <div class="table-wrap"><table class="table">

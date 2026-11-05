@@ -33,6 +33,8 @@
     <label>Email<input value="<%= user.email %>" disabled></label>
     <label>Mobile number<input type="tel" name="phone" required value="0<%= user.phone.slice(3) %>"></label>
     <label class="check"><input type="checkbox" name="whatsapp" value="1" <%= user.whatsapp ? 'checked' : '' %>> This number is on WhatsApp</label>
+    <label class="check"><input type="checkbox" name="sms_alerts" value="1" <%= user.sms_alerts ? 'checked' : '' %>> Text me about new messages, viewing requests and listing updates</label>
+    <p class="small muted">Password-reset codes and security alerts are always sent by SMS.</p>
     <h2 class="h4">Change password <span class="muted small">(optional)</span></h2>
     <label>Current password<input type="password" name="current_password" autocomplete="current-password"></label>
     <label>New password<input type="password" name="new_password" minlength="8" autocomplete="new-password"></label>

@@ -1,7 +1,7 @@
 const express = require('express');
 const { verifyCsrf, requireUser } = require('../auth');
 
-module.exports = (db) => {
+module.exports = (db, { notify }) => {
   const r = express.Router();
 
   r.get('/messages', requireUser, (req, res) => {
@@ -57,6 +57,13 @@ module.exports = (db) => {
     if (body) {
       db.prepare('INSERT INTO messages (conversation_id, sender_id, body) VALUES (?, ?, ?)').run(c.id, req.user.id, body);
       db.prepare("UPDATE conversations SET updated_at = datetime('now') WHERE id = ?").run(c.id);
+      notify.newMessage({
+        conversationId: c.id,
+        recipientId: req.user.id === c.tenant_id ? c.landlord_id : c.tenant_id,
+        senderName: req.user.name,
+        listingTitle: c.listing_title,
+        body,
+      });
     }
     res.redirect(`/messages/${c.id}#latest`);
   });

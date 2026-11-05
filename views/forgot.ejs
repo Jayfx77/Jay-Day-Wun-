@@ -1,0 +1,13 @@
+<%- include('partials/head') %>
+<section class="wrap narrow-sm section">
+  <h1 class="h2">Forgot your password?</h1>
+  <p class="muted">Enter the email or mobile number on your account. We'll text a 6-digit code to your phone<%= locals.emailEnabled ? ' and email you a reset link' : '' %>.</p>
+  <% if (error) { %><div class="errors" role="alert"><%= error %></div><% } %>
+  <form method="post" action="/forgot" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>Email or mobile number<input name="identifier" required autocomplete="username" value="<%= identifier %>" placeholder="you@example.com or 024 123 4567"></label>
+    <button class="btn btn-block">Send reset code</button>
+    <p class="center small"><a href="/login">Back to log in</a> · <a href="/reset">I already have a code</a></p>
+  </form>
+</section>
+<%- include('partials/foot') %>

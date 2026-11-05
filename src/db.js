@@ -121,6 +121,34 @@ const MIGRATIONS = [
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   `,
+  `
+  ALTER TABLE users ADD COLUMN sms_alerts INTEGER NOT NULL DEFAULT 1;
+
+  CREATE TABLE password_resets (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    code_hash TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX idx_resets_user ON password_resets(user_id, id);
+
+  CREATE TABLE sms_log (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    phone TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    ref TEXT,
+    body TEXT NOT NULL,
+    status TEXT NOT NULL,
+    error TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX idx_sms_user ON sms_log(user_id, kind, ref, created_at);
+  `,
 ];
 
 function migrate(db) {
