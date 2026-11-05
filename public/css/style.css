@@ -228,3 +228,7 @@ details form { margin-top: 12px; }
 .copyright { margin-top: 24px; }
 @media (max-width: 720px) { .footer-grid { grid-template-columns: 1fr 1fr; } .footer-grid > div:first-child { grid-column: 1 / -1; } .row { grid-template-columns: 1fr; } .amenities { columns: 1; } }
 .footer-grid .brand .brand-mark { display: inline; margin: 0; }
+.code-input { font-size: 1.6rem; letter-spacing: .4em; text-align: center; font-variant-numeric: tabular-nums; }
+.verify-banner { margin-top: 16px; margin-bottom: 0; }
+.linklike.green { color: var(--green); text-decoration: underline; }
+.code-input { padding: .35em .5em; }

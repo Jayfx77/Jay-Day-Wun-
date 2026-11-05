@@ -101,7 +101,7 @@
     <% users.forEach(u => { %>
       <tr class="<%= u.suspended ? 'suspended' : '' %>">
         <td><%= u.id %></td>
-        <td><%= u.name %><br><span class="small muted"><%= u.email %> · <%= prettyPhone(u.phone) %></span></td>
+        <td><%= u.name %><br><span class="small muted"><%= u.email %> · <%= prettyPhone(u.phone) %><%= u.phone_verified ? ' ✔' : ' (unverified)' %></span></td>
         <td><%= u.role %></td>
         <td><span class="badge"><%= u.verification_status %></span></td>
         <td><%= u.listings %></td>

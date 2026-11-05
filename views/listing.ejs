@@ -80,11 +80,15 @@
       <div class="panel">
         <h3 class="h4">Landlord</h3>
         <p><strong><%= listing.landlord_name %></strong>
-          <% if (listing.landlord_verification === 'verified') { %><br><span class="badge badge-green">✔ Ghana Card verified</span><% } else { %><br><span class="badge badge-grey">Not yet verified</span><% } %>
+          <% if (listing.landlord_verification === 'verified') { %><br><span class="badge badge-green">✔ Ghana Card verified</span><% } else { %><br><span class="badge badge-grey">ID not yet verified</span><% } %>
+          <% if (listing.landlord_phone_verified) { %><span class="badge badge-green">📱 Phone verified</span><% } %>
           <br><span class="small muted">On <%= siteName %> since <%= new Date(listing.landlord_since.replace(' ', 'T') + 'Z').toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) %></span>
         </p>
         <% if (!isOwner && listing.status === 'active') { %>
-          <% if (user) { %>
+          <% if (user && !user.phone_verified && user.role !== 'admin') { %>
+            <a class="btn btn-block" href="/verify-phone?next=/listings/<%= listing.id %>">Verify your phone to contact the landlord</a>
+            <p class="small muted center">Takes a minute. We text you a 6-digit code.</p>
+          <% } else if (user) { %>
             <p class="contact-line">📞 <a href="tel:+<%= listing.landlord_phone %>"><%= prettyPhone(listing.landlord_phone) %></a>
               <% if (listing.landlord_whatsapp) { %> · <a href="https://wa.me/<%= listing.landlord_phone %>?text=<%= encodeURIComponent(`Hello, I saw your listing "${listing.title}" on ${siteName}. Is it still available?`) %>" target="_blank" rel="noopener">WhatsApp</a><% } %>
             </p>

@@ -7,11 +7,14 @@ const helpers = require('./helpers');
 const { createSms } = require('./sms');
 const { createNotifier } = require('./notify');
 const { createMailer } = require('./mailer');
+const { createPhoneVerification } = require('./phoneVerification');
 
 function createApp(db, opts = {}) {
   const app = express();
   const sms = opts.sms || createSms(db);
-  const ctx = { sms, notify: createNotifier(db, sms), mailer: opts.mailer || createMailer() };
+  const ctx = {
+    sms, notify: createNotifier(db, sms), mailer: opts.mailer || createMailer(), phone: createPhoneVerification(db, sms),
+  };
   app.locals.ctx = ctx;
   app.locals.emailEnabled = ctx.mailer.enabled;
   app.locals.smsProvider = sms.provider;

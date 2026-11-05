@@ -1,5 +1,6 @@
 const express = require('express');
 const { verifyCsrf, requireUser } = require('../auth');
+const { requirePhoneVerified } = require('../phoneVerification');
 
 module.exports = (db, { notify }) => {
   const r = express.Router();
@@ -49,7 +50,7 @@ module.exports = (db, { notify }) => {
     });
   });
 
-  r.post('/messages/:id', requireUser, verifyCsrf, (req, res) => {
+  r.post('/messages/:id', requireUser, requirePhoneVerified, verifyCsrf, (req, res) => {
     const c = load(req, res);
     if (!c) return;
     if (c.tenant_id !== req.user.id && c.landlord_id !== req.user.id) return res.redirect(`/messages/${c.id}`);

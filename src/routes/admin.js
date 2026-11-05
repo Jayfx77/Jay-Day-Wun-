@@ -26,7 +26,7 @@ module.exports = (db, { notify }) => {
       FROM reports r JOIN listings l ON l.id = r.listing_id LEFT JOIN users u ON u.id = r.reporter_id
       WHERE r.status = 'open' ORDER BY r.id`).all();
     const q = String(req.query.q || '').trim();
-    const users = db.prepare(`SELECT id, name, email, phone, role, verification_status, suspended, created_at,
+    const users = db.prepare(`SELECT id, name, email, phone, phone_verified, role, verification_status, suspended, created_at,
         (SELECT COUNT(*) FROM listings l WHERE l.landlord_id = users.id) listings
       FROM users WHERE (@q = '' OR name LIKE @like OR email LIKE @like OR phone LIKE @like)
       ORDER BY id DESC LIMIT 50`).all({ q, like: `%${q}%` });

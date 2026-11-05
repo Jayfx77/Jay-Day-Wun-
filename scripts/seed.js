@@ -67,8 +67,8 @@ const pw = hashPassword('demo-password');
 const addUser = (name, email, phone, role, verification = 'unverified') => {
   const row = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
   if (row) return row.id;
-  return db.prepare(`INSERT INTO users (name, email, phone, password_hash, role, verification_status)
-    VALUES (?, ?, ?, ?, ?, ?)`).run(name, email, phone, pw, role, verification).lastInsertRowid;
+  return db.prepare(`INSERT INTO users (name, email, phone, password_hash, role, verification_status, phone_verified)
+    VALUES (?, ?, ?, ?, ?, ?, 1)`).run(name, email, phone, pw, role, verification).lastInsertRowid;
 };
 
 addUser('Demo Admin', 'admin@demo.local', '233200000001', 'admin', 'verified');

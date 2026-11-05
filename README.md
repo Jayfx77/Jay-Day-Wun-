@@ -20,6 +20,12 @@ Ofie Accra is a web platform where tenants in Accra find homes and deal **direct
 - Users get a text when someone messages them (at most one text per chat every 30 minutes), when a viewing is requested, confirmed, declined or cancelled, and when an admin approves or rejects their listing or Ghana Card. Each user can turn alerts off on their account page.
 - Forgot password: the user enters their email or phone number and gets a 6-digit code by SMS, plus a one-click link by email if SMTP is set up. Codes expire after 15 minutes. After 5 wrong tries the code stops working, and an account can request at most 3 codes per hour. A successful reset logs the account out on every device and sends a "password changed" text.
 
+**Phone verification**
+- New users get a 6-digit SMS code at sign-up. Until they enter it they can browse, but they can't see landlords' numbers, send messages, book viewings or post listings. A reminder banner shows on every page.
+- Codes expire after 10 minutes and stop working after 5 wrong tries. Users can request a new code once a minute, up to 5 per hour.
+- Each phone number can be verified on only one account, which makes fake or duplicate landlord accounts harder. Changing your number means verifying the new one.
+- Users who signed up before this feature was added are asked to verify the next time they log in. Admins don't need to.
+
 **Admins** (`/admin`)
 - Approve or reject listings, verify Ghana Cards (stored privately and never public), handle reports, take down listings, and suspend users.
 
@@ -74,4 +80,3 @@ Without a provider, `SMS_PROVIDER=log` prints texts to the server log instead of
 - [ ] Set a real `SUPPORT_EMAIL` and `SUPPORT_PHONE`.
 - [ ] Set up a domain, HTTPS and daily backups.
 - [ ] Set up an SMS provider and an approved sender ID (see *SMS setup*). Optionally add SMTP so reset links also go out by email.
-- [ ] Recommended next step: verify phone numbers at sign-up with an SMS code.
