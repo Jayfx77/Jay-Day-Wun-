@@ -38,10 +38,7 @@ module.exports = (db, { notify, phone: phoneCheck }) => {
       || (isTenant && to === 'cancelled' && ['requested', 'confirmed'].includes(v.status)));
     if (ok) {
       db.prepare('UPDATE viewings SET status = ? WHERE id = ?').run(to, v.id);
-      notify.viewingStatus({
-        toUserId: isLandlord ? v.tenant_id : v.landlord_id, status: to, listingTitle: v.listing_title,
-        date: v.preferred_date, time: v.preferred_time, byName: req.user.name,
-      });
+      notify.viewingStatus({ viewingId: v.id, status: to, byUserId: req.user.id });
     }
     res.redirect(`/dashboard?ok=${encodeURIComponent(ok ? 'Viewing updated.' : 'That change is not allowed.')}`);
   });

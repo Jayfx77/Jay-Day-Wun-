@@ -15,9 +15,9 @@ function createMailer(db, transport) {
   const finish = db && db.prepare('UPDATE email_log SET status = ?, error = ? WHERE id = ?');
   const pending = new Set();
 
-  function send({ to, subject, text, html, headers, userId = null, kind = 'other', ref = null }) {
+  function send({ to, subject, text, html, headers, attachments, userId = null, kind = 'other', ref = null }) {
     const id = insert ? insert.run(userId, to, kind, ref == null ? null : String(ref), subject).lastInsertRowid : null;
-    const p = t.sendMail({ from: `${config.siteName} <${config.smtp.from}>`, to, subject, text, html, headers })
+    const p = t.sendMail({ from: `${config.siteName} <${config.smtp.from}>`, to, subject, text, html, headers, attachments })
       .then(() => { if (id) finish.run('sent', null, id); return true; })
       .catch((err) => {
         console.error(`Email ${id || ''} failed:`, err.message);
