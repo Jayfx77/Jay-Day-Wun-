@@ -17,7 +17,7 @@ const app = createApp(db);
 const alerts = () => {
   try {
     const r = runSavedSearchAlerts(db, app.locals.ctx);
-    if (r.emailed) console.log(`Saved-search alerts: emailed ${r.emailed} of ${r.checked} searches`);
+    if (r.emailed || r.texted) console.log(`Saved-search alerts: ${r.emailed} emailed, ${r.texted} texted (${r.checked} searches)`);
   } catch (err) { console.error('Saved-search alerts failed:', err); }
 };
 setTimeout(alerts, 60e3).unref();

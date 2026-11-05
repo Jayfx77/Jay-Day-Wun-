@@ -55,18 +55,21 @@ function createSavedSearches(db) {
     .map((s) => ({ ...s, description: describe(s.filters), url: `/listings?${toQueryString(s.filters)}` }));
 
   // Returns { ok, error?, id? }.
-  function save(userId, rawQuery, frequency = 'instant') {
+  // channels: { email: bool, sms: bool }
+  function save(userId, rawQuery, frequency = 'instant', channels = { email: true, sms: false }) {
     const filters = normalise(rawQuery);
     const query = JSON.stringify(filters);
+    const email = channels.email ? 1 : 0;
+    const sms = channels.sms ? 1 : 0;
     const existing = db.prepare('SELECT id FROM saved_searches WHERE user_id = ? AND query = ?').get(userId, query);
     if (existing) {
-      db.prepare('UPDATE saved_searches SET frequency = ? WHERE id = ?').run(frequency, existing.id);
+      db.prepare('UPDATE saved_searches SET frequency = ?, email = ?, sms = ? WHERE id = ?').run(frequency, email, sms, existing.id);
       return { ok: true, id: existing.id, existed: true };
     }
     const count = db.prepare('SELECT COUNT(*) n FROM saved_searches WHERE user_id = ?').get(userId).n;
     if (count >= MAX_PER_USER) return { ok: false, error: `You can save up to ${MAX_PER_USER} searches. Delete one on your dashboard first.` };
-    const id = db.prepare('INSERT INTO saved_searches (user_id, query, frequency, token) VALUES (?, ?, ?, ?)')
-      .run(userId, query, frequency, crypto.randomBytes(24).toString('base64url')).lastInsertRowid;
+    const id = db.prepare('INSERT INTO saved_searches (user_id, query, frequency, token, email, sms) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(userId, query, frequency, crypto.randomBytes(24).toString('base64url'), email, sms).lastInsertRowid;
     return { ok: true, id };
   }
 

@@ -84,7 +84,7 @@
   <h2 class="h3" id="saved-searches">Saved searches</h2>
   <% if (savedSearches.length) { %>
     <div class="table-wrap"><table class="table">
-      <thead><tr><th>Search</th><th>Email alerts</th><th></th></tr></thead>
+      <thead><tr><th>Search</th><th>Alerts</th><th></th></tr></thead>
       <tbody>
       <% savedSearches.forEach(s => { %>
         <tr>
@@ -97,6 +97,8 @@
                 <option value="daily" <%= s.frequency === 'daily' ? 'selected' : '' %>>Daily summary</option>
                 <option value="off" <%= s.frequency === 'off' ? 'selected' : '' %>>Off</option>
               </select>
+              <label class="check small"><input type="checkbox" name="alert_email" value="1" <%= s.email ? 'checked' : '' %>> Email</label>
+              <% if (user.phone_verified) { %><label class="check small"><input type="checkbox" name="alert_sms" value="1" <%= s.sms ? 'checked' : '' %>> SMS</label><% } %>
               <button class="btn btn-ghost btn-sm">Save</button>
             </form>
           </td>
@@ -105,6 +107,7 @@
       <% }) %>
       </tbody>
     </table></div>
+    <p class="small muted">SMS alerts are limited to <%= smsSearchAlertsPerDay %> texts a day; anything over that still goes by email if ticked. Texts also follow the SMS setting on your <a href="/account">account page</a>.</p>
     <% if (!emailEnabled) { %><p class="small muted">Email alerts will start once the site's email service is set up.</p><% } %>
   <% } else { %><p class="muted">On the <a href="/listings">search page</a>, set your filters and tap “🔔 Save search” to get emailed when new homes match.</p><% } %>
 

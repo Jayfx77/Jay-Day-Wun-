@@ -80,7 +80,7 @@ test('a logged-in user can save a search; saving again does not duplicate it', a
   kojo = client();
   await kojo.login('kojo@test.gh');
   kcsrf = await kojo.csrf('/listings?area=Osu');
-  const form = { _csrf: kcsrf, area: 'Osu', max: '4000', beds: '2', amenity: 'borehole', frequency: 'instant' };
+  const form = { _csrf: kcsrf, area: 'Osu', max: '4000', beds: '2', amenity: 'borehole', frequency: 'instant', alert_email: '1' };
   let r = await kojo.post('/saved-searches', form);
   assert.match(r.headers.get('location'), /^\/listings\?area=Osu&max=4000&beds=2&amenity=borehole&ok=Search%20saved/);
   r = await kojo.post('/saved-searches', form);
@@ -126,7 +126,7 @@ test('new matching listings are emailed once; non-matching and older ones are no
 test('landlords are not alerted about their own listings', async () => {
   const ama = client();
   await ama.login('ama@test.gh');
-  await ama.post('/saved-searches', { _csrf: await ama.csrf('/listings'), area: 'Osu', frequency: 'instant' });
+  await ama.post('/saved-searches', { _csrf: await ama.csrf('/listings'), area: 'Osu', frequency: 'instant', alert_email: '1' });
   backdateSearches();
   addListing({ title: 'Ama own listing' });
   await run(new Date(Date.now() + 2000));
@@ -144,7 +144,7 @@ function tomorrowAt(hour, minute = 0) {
 
 test('daily searches send one digest after 7am GMT', async () => {
   const s = db.prepare('SELECT id FROM saved_searches').get().id;
-  await kojo.post(`/saved-searches/${s}/frequency`, { _csrf: kcsrf, frequency: 'daily' });
+  await kojo.post(`/saved-searches/${s}/frequency`, { _csrf: kcsrf, frequency: 'daily', alert_email: '1' });
   db.prepare('UPDATE saved_searches SET last_sent_at = NULL').run(); // no digest sent yet
   backdateSearches();
   addListing({ title: 'Digest one' });
@@ -181,7 +181,7 @@ test('the stop link turns alerts off for that search; turning back on skips the 
   await run(new Date(Date.now() + 2000));
   assert.equal(alertsTo('kojo@test.gh').length, before);
 
-  await kojo.post(`/saved-searches/${s.id}/frequency`, { _csrf: kcsrf, frequency: 'instant' });
+  await kojo.post(`/saved-searches/${s.id}/frequency`, { _csrf: kcsrf, frequency: 'instant', alert_email: '1' });
   await run(new Date(Date.now() + 4000));
   assert.equal(alertsTo('kojo@test.gh').length, before, 'backlog from while it was off is not sent');
 });
@@ -207,8 +207,8 @@ test('people can delete saved searches, only their own, and are limited to 10', 
   await kojo.post(`/saved-searches/${s}/delete`, { _csrf: kcsrf });
   assert.equal(db.prepare('SELECT COUNT(*) n FROM saved_searches').get().n, 0);
 
-  for (let i = 1; i <= 10; i++) await kojo.post('/saved-searches', { _csrf: kcsrf, max: String(i * 1000) });
-  const r = await kojo.post('/saved-searches', { _csrf: kcsrf, max: '99000' });
+  for (let i = 1; i <= 10; i++) await kojo.post('/saved-searches', { _csrf: kcsrf, max: String(i * 1000), alert_email: '1' });
+  const r = await kojo.post('/saved-searches', { _csrf: kcsrf, max: '99000', alert_email: '1' });
   assert.match(decodeURIComponent(r.headers.get('location')), /You can save up to 10 searches/);
   assert.equal(db.prepare('SELECT COUNT(*) n FROM saved_searches').get().n, 10);
 });

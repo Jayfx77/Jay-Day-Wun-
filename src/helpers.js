@@ -55,6 +55,7 @@ function locals(app) {
     legalAdvanceMonths: config.legalAdvanceMonths,
     supportEmail: config.supportEmail,
     supportPhone: config.supportPhone,
+    smsSearchAlertsPerDay: config.sms.searchAlertsPerDay,
   });
 }
 
