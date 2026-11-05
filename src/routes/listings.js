@@ -274,9 +274,9 @@ module.exports = (db, { notify }) => {
     const open = db.prepare(`SELECT 1 FROM viewings WHERE listing_id = ? AND tenant_id = ? AND status IN ('requested','confirmed')`)
       .get(listing.id, req.user.id);
     if (open) return res.redirect(`/listings/${listing.id}?ok=${encodeURIComponent('You already have a viewing request for this property.')}`);
-    db.prepare('INSERT INTO viewings (listing_id, tenant_id, preferred_date, preferred_time, note) VALUES (?, ?, ?, ?, ?)')
-      .run(listing.id, req.user.id, date, time, String(req.body.note || '').trim().slice(0, 500) || null);
-    notify.viewingRequested({ landlordId: listing.landlord_id, tenantName: req.user.name, listingTitle: listing.title, date, time });
+    const viewingId = db.prepare('INSERT INTO viewings (listing_id, tenant_id, preferred_date, preferred_time, note) VALUES (?, ?, ?, ?, ?)')
+      .run(listing.id, req.user.id, date, time, String(req.body.note || '').trim().slice(0, 500) || null).lastInsertRowid;
+    notify.viewingRequested({ viewingId });
     res.redirect(`/listings/${listing.id}?ok=${encodeURIComponent('Viewing requested. The landlord will confirm on your dashboard.')}`);
   });
 

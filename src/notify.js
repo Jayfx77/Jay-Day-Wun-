@@ -2,7 +2,7 @@
 // alert preferences and sends without blocking the request.
 const crypto = require('crypto');
 const config = require('./config');
-const { newMessageEmail } = require('./emails');
+const { newMessageEmail, viewingRequestedEmail, viewingStatusEmail } = require('./emails');
 
 const shorten = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
@@ -22,22 +22,33 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
     return url(`/unsubscribe?token=${token}`);
   }
 
-  function emailNewMessage({ conversationId, recipientId, senderName, listingTitle, body }) {
+  // Sends an alert email if email is configured and the user hasn't opted out.
+  function email(userId, kind, ref, build) {
     if (!mailer.enabled) return;
-    const u = getUser.get(recipientId);
+    const u = getUser.get(userId);
     if (!u || !u.email_alerts || u.suspended) return;
-    // One email per conversation per cooldown window; the email links to the full chat.
-    if (recentlyEmailed.get(u.id, 'message', String(conversationId), `-${config.emailMessageCooldownMinutes} minutes`)) return;
     const unsub = unsubscribeUrl(u);
-    const email = newMessageEmail({
-      recipientName: u.name.split(' ')[0], senderName, listingTitle, body,
-      conversationUrl: url(`/messages/${conversationId}`), unsubscribeUrl: unsub,
-    });
+    const msg = build(u, unsub);
     mailer.send({
-      ...email, to: u.email, userId: u.id, kind: 'message', ref: conversationId,
+      ...msg, to: u.email, userId: u.id, kind, ref,
       // RFC 8058 one-click unsubscribe (Gmail/Yahoo show an "Unsubscribe" button).
       headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
     });
+  }
+
+  const getViewing = db.prepare(`SELECT v.*, l.title listing_title, l.address, l.neighbourhood, l.gps_address, l.landlord_id,
+      t.name tenant_name, t.phone tenant_phone, ll.name landlord_name, ll.phone landlord_phone
+    FROM viewings v JOIN listings l ON l.id = v.listing_id JOIN users t ON t.id = v.tenant_id JOIN users ll ON ll.id = l.landlord_id
+    WHERE v.id = ?`);
+  const uidHost = new URL(config.baseUrl).hostname;
+
+  function emailNewMessage({ conversationId, recipientId, senderName, listingTitle, body }) {
+    // One email per conversation per cooldown window; the email links to the full chat.
+    if (recentlyEmailed.get(recipientId, 'message', String(conversationId), `-${config.emailMessageCooldownMinutes} minutes`)) return;
+    email(recipientId, 'message', conversationId, (u, unsub) => newMessageEmail({
+      recipientName: u.name.split(' ')[0], senderName, listingTitle, body,
+      conversationUrl: url(`/messages/${conversationId}`), unsubscribeUrl: unsub,
+    }));
   }
   const recentlyTexted = db.prepare(`SELECT 1 FROM sms_log WHERE user_id = ? AND kind = ? AND ref = ?
     AND status != 'failed' AND created_at > datetime('now', ?)`);
@@ -58,15 +69,31 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
         `${site}: New message from ${shorten(senderName, 30)} about "${shorten(listingTitle, 40)}": "${shorten(body, 80)}" Reply: ${url(`/messages/${conversationId}`)}`);
     },
 
-    viewingRequested({ landlordId, tenantName, listingTitle, date, time }) {
-      alert(landlordId, 'viewing', null,
-        `${site}: ${shorten(tenantName, 30)} wants to view "${shorten(listingTitle, 40)}" on ${date} (${time}). Confirm or decline: ${url('/dashboard')}`);
+    viewingRequested({ viewingId }) {
+      const v = getViewing.get(viewingId);
+      if (!v) return;
+      alert(v.landlord_id, 'viewing', v.id,
+        `${site}: ${shorten(v.tenant_name, 30)} wants to view "${shorten(v.listing_title, 40)}" on ${v.preferred_date} (${v.preferred_time}). Confirm or decline: ${url('/dashboard')}`);
+      email(v.landlord_id, 'viewing', v.id, (u, unsub) => viewingRequestedEmail({
+        v, recipientName: u.name.split(' ')[0], dashboardUrl: url('/dashboard'), unsubscribeUrl: unsub,
+      }));
     },
 
-    viewingStatus({ toUserId, status, listingTitle, date, time, byName }) {
+    // byUserId changed the viewing to `status`; tell the other party.
+    viewingStatus({ viewingId, status, byUserId }) {
+      const v = getViewing.get(viewingId);
+      if (!v) return;
+      const byLandlord = byUserId === v.landlord_id;
+      const toUserId = byLandlord ? v.tenant_id : v.landlord_id;
+      const byName = byLandlord ? v.landlord_name : v.tenant_name;
       const verb = { confirmed: 'CONFIRMED', declined: 'declined', cancelled: 'cancelled' }[status];
-      alert(toUserId, 'viewing', null,
-        `${site}: ${shorten(byName, 30)} ${verb} the viewing of "${shorten(listingTitle, 40)}" on ${date} (${time}). Details: ${url('/dashboard')}`);
+      if (!verb) return;
+      alert(toUserId, 'viewing', v.id,
+        `${site}: ${shorten(byName, 30)} ${verb} the viewing of "${shorten(v.listing_title, 40)}" on ${v.preferred_date} (${v.preferred_time}). Details: ${url('/dashboard')}`);
+      email(toUserId, 'viewing', v.id, (u, unsub) => viewingStatusEmail({
+        v, status, toTenant: byLandlord, byName, recipientName: u.name.split(' ')[0], unsubscribeUrl: unsub, uidHost,
+        urls: { dashboard: url('/dashboard'), similar: url(`/listings?area=${encodeURIComponent(v.neighbourhood)}`) },
+      }));
     },
 
     listingModerated({ landlordId, listingId, listingTitle, action, note }) {
