@@ -7,7 +7,8 @@ module.exports = {
   env: process.env.NODE_ENV || 'development',
   isProd: process.env.NODE_ENV === 'production',
   siteName: process.env.SITE_NAME || 'Ofie Accra',
-  baseUrl: process.env.BASE_URL || `http://localhost:${Number(process.env.PORT) || 3000}`,
+  // Render sets RENDER_EXTERNAL_URL automatically (e.g. https://ofie-accra.onrender.com).
+  baseUrl: process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || `http://localhost:${Number(process.env.PORT) || 3000}`,
   dbFile: process.env.DB_FILE || path.join(root, 'data', 'ofie.db'),
   uploadDir: process.env.UPLOAD_DIR || path.join(root, 'uploads'),
   privateDir: process.env.PRIVATE_DIR || path.join(root, 'private'),
