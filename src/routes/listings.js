@@ -167,7 +167,8 @@ module.exports = (db, { notify }) => {
     }
     const trusted = req.user.role === 'admin' || req.user.verification_status === 'verified';
     let status = listing.status;
-    if (!trusted && ['active', 'rejected'].includes(status)) status = 'pending';
+    // Rejected listings always go back for review once edited; unverified landlords' edits to live listings too.
+    if (status === 'rejected' || (!trusted && status === 'active')) status = 'pending';
     db.prepare(`UPDATE listings SET title=@title, description=@description, property_type=@property_type,
       neighbourhood=@neighbourhood, address=@address, gps_address=@gps_address, bedrooms=@bedrooms, bathrooms=@bathrooms,
       rent_ghs=@rent_ghs, advance_months=@advance_months, furnishing=@furnishing, amenities=@amenities,

@@ -34,7 +34,7 @@
     <label>Mobile number<input type="tel" name="phone" required value="0<%= user.phone.slice(3) %>"></label>
     <label class="check"><input type="checkbox" name="whatsapp" value="1" <%= user.whatsapp ? 'checked' : '' %>> This number is on WhatsApp</label>
     <label class="check"><input type="checkbox" name="sms_alerts" value="1" <%= user.sms_alerts ? 'checked' : '' %>> Text me about new messages, viewing requests and listing updates</label>
-    <% if (emailEnabled) { %><label class="check"><input type="checkbox" name="email_alerts" value="1" <%= user.email_alerts ? 'checked' : '' %>> Email me about new messages and viewing requests</label><% } else { %><input type="hidden" name="email_alerts" value="<%= user.email_alerts ? '1' : '' %>"><% } %>
+    <% if (emailEnabled) { %><label class="check"><input type="checkbox" name="email_alerts" value="1" <%= user.email_alerts ? 'checked' : '' %>> Email me about new messages, viewing requests and listing approvals</label><% } else { %><input type="hidden" name="email_alerts" value="<%= user.email_alerts ? '1' : '' %>"><% } %>
     <p class="small muted">Password-reset codes and security alerts are always sent.</p>
     <h2 class="h4">Change password <span class="muted small">(optional)</span></h2>
     <label>Current password<input type="password" name="current_password" autocomplete="current-password"></label>

@@ -172,4 +172,68 @@ function viewingStatusEmail({ v, status, toTenant, recipientName, byName, urls, 
   };
 }
 
-module.exports = { newMessageEmail, viewingRequestedEmail, viewingStatusEmail, viewingIcs, esc };
+// ---------- Listing decision emails (to landlords) ----------
+const cedis = (n) => `GH₵ ${Number(n).toLocaleString('en-GH', { maximumFractionDigits: 0 })}`;
+const listingRows = (l) => [
+  ['Listing', l.title],
+  ['Area', l.neighbourhood],
+  ['Rent', `${cedis(l.rent_ghs)} / month, ${l.advance_months} month${l.advance_months === 1 ? '' : 's'} advance`],
+];
+
+function listingDecisionEmail({ listing, action, note, recipientName, urls, unsubscribeUrl }) {
+  const t = short(listing.title);
+  if (action === 'approve') {
+    return {
+      subject: `Your listing is live: "${t}"`,
+      ...card({
+        recipientName, unsubscribeUrl, preheader: 'Tenants can now find your property and contact you directly.',
+        intro: `Good news: your listing "${listing.title}" has been approved and is now live. Tenants can find it, message you and book viewings.`,
+        rows: listingRows(listing),
+        cta: { label: 'View your listing', url: urls.listing },
+        tip: 'Tips: reply to enquiries quickly, confirm viewings from your dashboard, and mark the listing as rented once you have found a tenant.',
+      }),
+    };
+  }
+  if (action === 'reject') {
+    return {
+      subject: `Your listing needs changes: "${t}"`,
+      ...card({
+        recipientName, unsubscribeUrl, preheader: note ? `Reason: ${note}` : 'Please update your listing and resubmit.',
+        intro: `Your listing "${listing.title}" was not approved yet. Please make the changes below and save it. It will be reviewed again.`,
+        rows: [['Reason', note || 'No reason was given. Please contact support if you are unsure what to change.'], ...listingRows(listing)],
+        cta: { label: 'Edit and resubmit', url: urls.edit },
+        tip: 'Common fixes: use real, recent photos of this exact property; give the correct rent and advance; describe the rooms, water and electricity; add a GhanaPost GPS address.',
+      }),
+    };
+  }
+  // takedown
+  return {
+    subject: `Your listing was removed: "${t}"`,
+    ...card({
+      recipientName, unsubscribeUrl, preheader: note ? `Reason: ${note}` : 'Your listing is no longer visible to tenants.',
+      intro: `Your listing "${listing.title}" has been removed and is no longer visible to tenants.`,
+      rows: [['Reason', note || 'It broke our listing rules.'], ...listingRows(listing)],
+      cta: { label: 'Contact support', url: `mailto:${config.supportEmail}` },
+      tip: `If you think this is a mistake, reply to ${config.supportEmail} with the listing name.`,
+    }),
+  };
+}
+
+// When a landlord is verified, their pending listings go live together; one email lists them all.
+function listingsPublishedEmail({ listings, recipientName, urls, unsubscribeUrl }) {
+  const one = listings.length === 1;
+  return {
+    subject: one ? `Your listing is live: "${short(listings[0].title)}"` : `Your ${listings.length} listings are live`,
+    ...card({
+      recipientName, unsubscribeUrl, preheader: 'Your Ghana Card is verified and your listings are now public.',
+      intro: `Your Ghana Card has been verified, so ${one ? 'your listing is' : 'these listings are'} now live with the verified-landlord badge. Future listings will go live as soon as you post them.`,
+      rows: listings.map((l) => [l.neighbourhood, `${l.title} (${cedis(l.rent_ghs)} / month)`]),
+      cta: one ? { label: 'View your listing', url: urls.listing(listings[0].id) } : { label: 'Open your dashboard', url: urls.dashboard },
+      tip: 'Tips: reply to enquiries quickly, confirm viewings from your dashboard, and mark listings as rented once you have found a tenant.',
+    }),
+  };
+}
+
+module.exports = {
+  newMessageEmail, viewingRequestedEmail, viewingStatusEmail, viewingIcs, listingDecisionEmail, listingsPublishedEmail, esc,
+};

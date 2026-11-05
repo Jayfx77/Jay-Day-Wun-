@@ -29,6 +29,7 @@ Ofie Accra is a web platform where tenants in Accra find homes and deal **direct
 **Email notifications**
 - When email is set up (see *Email setup*), users get an email for each new message, with a preview and a "Reply" button. Follow-ups in the same chat within 15 minutes don't trigger another email.
 - Viewing emails: landlords get one when a tenant asks to view, showing the date, time window, tenant's phone number and note. When a viewing is confirmed, the tenant gets the address, GhanaPost GPS address, the landlord's phone number and a **calendar invite**. Declined or cancelled viewings email the other person, and tenants get a link to similar homes.
+- Listing emails: landlords are emailed when an admin approves their listing ("Your listing is live"), rejects it (with the reason and an **Edit and resubmit** button), or takes it down (with the reason). When a landlord's Ghana Card is verified, one email lists all their listings that just went live.
 - Every email has an unsubscribe link, and Gmail and Yahoo show their own "Unsubscribe" button for it. Users can also switch emails off on their account page. Password-reset emails are always sent.
 
 **Admins** (`/admin`)

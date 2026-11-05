@@ -61,6 +61,9 @@ module.exports = (db, { notify }) => {
     if (!['verify', 'reject'].includes(action)) return done(res, 'Unknown action.');
     const status = action === 'verify' ? 'verified' : 'rejected';
     const note = String(req.body.note || '').trim().slice(0, 500) || null;
+    const published = status === 'verified'
+      ? db.prepare("SELECT id FROM listings WHERE landlord_id = ? AND status = 'pending' ORDER BY id").all(req.params.id).map((l) => l.id)
+      : [];
     db.transaction(() => {
       db.prepare('UPDATE users SET verification_status = ?, verification_note = ? WHERE id = ?')
         .run(status, note, req.params.id);
@@ -71,6 +74,7 @@ module.exports = (db, { notify }) => {
       }
     })();
     notify.verificationResult({ userId: Number(req.params.id), status, note });
+    if (published.length) notify.listingsPublished({ landlordId: Number(req.params.id), listingIds: published });
     done(res, `User #${req.params.id} ${status}.`);
   });
 
