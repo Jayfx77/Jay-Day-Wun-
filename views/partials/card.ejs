@@ -1,0 +1,21 @@
+<article class="card">
+  <a href="/listings/<%= l.id %>" class="card-img">
+    <% if (l.cover) { %><img src="/uploads/<%= l.cover %>" alt="" loading="lazy"><% } else { %><div class="noimg">No photo</div><% } %>
+    <% if (l.status === 'rented') { %><span class="tag tag-dark">Rented</span><% } %>
+    <% if (l.photo_count > 1) { %><span class="tag tag-count">📷 <%= l.photo_count %></span><% } %>
+  </a>
+  <div class="card-body">
+    <div class="price"><%= cedis(l.rent_ghs) %><span>/month</span></div>
+    <a class="card-title" href="/listings/<%= l.id %>"><%= l.title %></a>
+    <div class="muted small">📍 <%= l.neighbourhood %> · <%= PROPERTY_TYPES[l.property_type] %></div>
+    <div class="facts small">
+      <span><%= l.bedrooms ? `${l.bedrooms} bed` : 'Single room' %></span>
+      <span><%= l.bathrooms %> bath</span>
+      <span><%= FURNISHING[l.furnishing] %></span>
+    </div>
+    <div class="badges">
+      <% if (l.landlord_verification === 'verified') { %><span class="badge badge-green">✔ Verified landlord</span><% } %>
+      <% if (l.advance_months <= legalAdvanceMonths) { %><span class="badge badge-gold"><%= l.advance_months %> mo advance</span><% } else { %><span class="badge badge-grey"><%= l.advance_months %> mo advance</span><% } %>
+    </div>
+  </div>
+</article>

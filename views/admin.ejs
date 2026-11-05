@@ -1,0 +1,106 @@
+<%- include('partials/head') %>
+<% const hidden = `<input type="hidden" name="_csrf" value="${csrfToken}">`; %>
+<section class="wrap section">
+  <h1 class="h2">Admin</h1>
+  <div class="statgrid">
+    <div><strong><%= stats.active %></strong><span>active listings</span></div>
+    <div><strong><%= stats.rented %></strong><span>rented</span></div>
+    <div><strong><%= stats.landlords %></strong><span>landlords</span></div>
+    <div><strong><%= stats.tenants %></strong><span>tenants</span></div>
+    <div><strong><%= stats.conversations %></strong><span>conversations</span></div>
+    <div><strong><%= stats.viewings %></strong><span>viewing requests</span></div>
+  </div>
+
+  <h2 class="h3">Listings awaiting review (<%= pendingListings.length %>)</h2>
+  <% if (pendingListings.length) { %>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Listing</th><th>Landlord</th><th>Rent</th><th>Photos</th><th>Decision</th></tr></thead>
+      <tbody>
+      <% pendingListings.forEach(l => { %>
+        <tr>
+          <td><a href="/listings/<%= l.id %>" target="_blank"><%= l.title %></a><br><span class="small muted"><%= l.neighbourhood %> · <%= timeAgo(l.created_at) %></span></td>
+          <td><%= l.landlord_name %><br><span class="small badge"><%= l.landlord_verification %></span></td>
+          <td><%= cedis(l.rent_ghs) %> × <%= l.advance_months %></td>
+          <td><%= l.photo_count %></td>
+          <td>
+            <form method="post" action="/admin/listings/<%= l.id %>/moderate" class="mod-form">
+              <%- hidden %>
+              <input name="note" placeholder="Note to landlord (for rejections)">
+              <button name="action" value="approve" class="btn btn-sm">Approve</button>
+              <button name="action" value="reject" class="btn btn-ghost btn-sm danger">Reject</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+  <% } else { %><p class="muted">Nothing to review. 🎉</p><% } %>
+
+  <h2 class="h3">Ghana Card verifications (<%= pendingVerifications.length %>)</h2>
+  <% if (pendingVerifications.length) { %>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Landlord</th><th>Card number</th><th>Document</th><th>Decision</th></tr></thead>
+      <tbody>
+      <% pendingVerifications.forEach(u => { %>
+        <tr>
+          <td><%= u.name %><br><span class="small muted"><%= u.email %> · <%= prettyPhone(u.phone) %></span></td>
+          <td><code><%= u.ghana_card_number %></code></td>
+          <td><a href="/admin/users/<%= u.id %>/ghana-card" target="_blank">View card</a></td>
+          <td>
+            <form method="post" action="/admin/users/<%= u.id %>/verification" class="mod-form">
+              <%- hidden %>
+              <input name="note" placeholder="Reason if rejecting">
+              <button name="action" value="verify" class="btn btn-sm">Verify</button>
+              <button name="action" value="reject" class="btn btn-ghost btn-sm danger">Reject</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+    <p class="small muted">Check that the name matches the account and the card looks genuine. You can confirm card validity with NIA where available.</p>
+  <% } else { %><p class="muted">No pending verifications.</p><% } %>
+
+  <h2 class="h3">Open reports (<%= reports.length %>)</h2>
+  <% if (reports.length) { %>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Listing</th><th>Reason</th><th>From</th><th>Actions</th></tr></thead>
+      <tbody>
+      <% reports.forEach(r => { %>
+        <tr>
+          <td><a href="/listings/<%= r.listing_id %>" target="_blank"><%= r.listing_title %></a> <span class="badge"><%= r.listing_status %></span></td>
+          <td><strong><%= REPORT_REASONS[r.reason] %></strong><% if (r.details) { %><br><span class="small"><%= r.details %></span><% } %></td>
+          <td class="small"><%= r.reporter_name || 'Anonymous' %><br><%= timeAgo(r.created_at) %></td>
+          <td class="nowrap">
+            <form method="post" action="/admin/listings/<%= r.listing_id %>/moderate" class="inline"><%- hidden %><input type="hidden" name="note" value="Removed after a report: <%= REPORT_REASONS[r.reason] %>"><button name="action" value="takedown" class="btn btn-ghost btn-sm danger">Take down</button></form>
+            <form method="post" action="/admin/reports/<%= r.id %>/resolve" class="inline"><%- hidden %><button class="btn btn-ghost btn-sm">Resolve</button></form>
+          </td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+  <% } else { %><p class="muted">No open reports.</p><% } %>
+
+  <h2 class="h3">Users</h2>
+  <form method="get" action="/admin" class="row-btns"><input name="q" value="<%= q %>" placeholder="Search name, email or phone"><button class="btn btn-sm">Search</button></form>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>#</th><th>User</th><th>Role</th><th>Verification</th><th>Listings</th><th></th></tr></thead>
+    <tbody>
+    <% users.forEach(u => { %>
+      <tr class="<%= u.suspended ? 'suspended' : '' %>">
+        <td><%= u.id %></td>
+        <td><%= u.name %><br><span class="small muted"><%= u.email %> · <%= prettyPhone(u.phone) %></span></td>
+        <td><%= u.role %></td>
+        <td><span class="badge"><%= u.verification_status %></span></td>
+        <td><%= u.listings %></td>
+        <td><% if (u.role !== 'admin') { %>
+          <form method="post" action="/admin/users/<%= u.id %>/suspend" class="inline"><%- hidden %>
+            <button name="action" value="<%= u.suspended ? 'reinstate' : 'suspend' %>" class="btn btn-ghost btn-sm <%= u.suspended ? '' : 'danger' %>" <%- u.suspended ? '' : 'data-confirm="Suspend this user? Their listings will be hidden."' %>><%= u.suspended ? 'Reinstate' : 'Suspend' %></button>
+          </form>
+        <% } %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</section>
+<%- include('partials/foot') %>

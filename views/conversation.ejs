@@ -1,0 +1,32 @@
+<%- include('partials/head') %>
+<section class="wrap narrow section">
+  <p class="small"><a href="/messages">← All messages</a></p>
+  <div class="chat-head panel">
+    <div>
+      <strong><%= other.name %></strong> <span class="muted small">(<%= other.role %>)</span>
+      <% if (other.verified) { %><span class="badge badge-green">✔ Verified</span><% } %>
+      <div class="small">About: <a href="/listings/<%= c.listing_id %>"><%= c.listing_title %></a> · <%= cedis(c.rent_ghs) %>/mo · <%= c.neighbourhood %></div>
+    </div>
+    <div class="small nowrap">
+      <a href="tel:+<%= other.phone %>">📞 <%= prettyPhone(other.phone) %></a>
+      <% if (other.whatsapp) { %><br><a href="https://wa.me/<%= other.phone %>" target="_blank" rel="noopener">WhatsApp</a><% } %>
+    </div>
+  </div>
+  <div class="chat">
+    <% messages.forEach((m, i) => { %>
+      <div class="bubble <%= m.sender_id === user.id ? 'me' : 'them' %>" <%= i === messages.length - 1 ? 'id=latest' : '' %>>
+        <div><% m.body.split('\n').forEach((line, j) => { %><%= j ? '\n' : '' %><%= line %><% }) %></div>
+        <div class="meta"><%= timeAgo(m.created_at) %><% if (m.sender_id === user.id && m.read_at) { %> · Seen<% } %></div>
+      </div>
+    <% }) %>
+  </div>
+  <% if (c.tenant_id === user.id || c.landlord_id === user.id) { %>
+    <form method="post" action="/messages/<%= c.id %>" class="chat-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <textarea name="body" rows="2" required maxlength="2000" placeholder="Write a message…"></textarea>
+      <button class="btn">Send</button>
+    </form>
+  <% } %>
+  <p class="small muted">🛡️ Never send money before viewing the property and confirming the person is the owner. Report anything suspicious from the listing page.</p>
+</section>
+<%- include('partials/foot') %>

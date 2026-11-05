@@ -1,0 +1,42 @@
+<%- include('partials/head') %>
+<section class="wrap narrow-sm section">
+  <% if (welcome) { %>
+    <div class="notice">🎉 Welcome to <%= siteName %>! Verify your identity below so your listings go live instantly, or <a href="/listings/new">post your first property now</a>.</div>
+  <% } %>
+  <h1 class="h2">My account</h1>
+  <%- include('partials/errors') %>
+
+  <% if (user.role === 'landlord') { %>
+  <div class="panel">
+    <h2 class="h4">Identity verification</h2>
+    <% if (user.verification_status === 'verified') { %>
+      <p><span class="badge badge-green">✔ Verified</span> Your listings show the verified-landlord badge.</p>
+    <% } else if (user.verification_status === 'pending') { %>
+      <p><span class="badge badge-gold">Pending review</span> We're checking your Ghana Card. This usually takes under one working day.</p>
+    <% } else { %>
+      <% if (user.verification_status === 'rejected') { %><p class="warn">Your last submission was not accepted<%= user.verification_note ? `: ${user.verification_note}` : '.' %> Please try again.</p><% } %>
+      <p class="small">Tenants trust verified landlords. Upload your Ghana Card (NIA) — it is stored privately and only seen by our verification team. The name on the card must match your account name.</p>
+      <form method="post" action="/account/verification" enctype="multipart/form-data" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Ghana Card number<input name="ghana_card_number" required placeholder="GHA-123456789-0" pattern="[Gg][Hh][Aa]-\d{9}-\d"></label>
+        <label>Photo or PDF of the card (front)<input type="file" name="ghana_card" accept="image/jpeg,image/png,image/webp,application/pdf" required></label>
+        <button class="btn">Submit for verification</button>
+      </form>
+    <% } %>
+  </div>
+  <% } %>
+
+  <form method="post" action="/account" class="form panel">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <h2 class="h4">Profile</h2>
+    <label>Full name<input name="name" required value="<%= user.name %>"></label>
+    <label>Email<input value="<%= user.email %>" disabled></label>
+    <label>Mobile number<input type="tel" name="phone" required value="0<%= user.phone.slice(3) %>"></label>
+    <label class="check"><input type="checkbox" name="whatsapp" value="1" <%= user.whatsapp ? 'checked' : '' %>> This number is on WhatsApp</label>
+    <h2 class="h4">Change password <span class="muted small">(optional)</span></h2>
+    <label>Current password<input type="password" name="current_password" autocomplete="current-password"></label>
+    <label>New password<input type="password" name="new_password" minlength="8" autocomplete="new-password"></label>
+    <button class="btn">Save</button>
+  </form>
+</section>
+<%- include('partials/foot') %>

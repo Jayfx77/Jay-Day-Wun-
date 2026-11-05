@@ -1,0 +1,161 @@
+<%- include('partials/head') %>
+<section class="wrap section">
+  <p class="small"><a href="/listings?area=<%= encodeURIComponent(listing.neighbourhood) %>">← More homes in <%= listing.neighbourhood %></a></p>
+
+  <% if (isOwner && listing.status !== 'active') { %>
+    <div class="notice notice-<%= listing.status %>">
+      <% if (listing.status === 'pending') { %>⏳ This listing is awaiting review and is not public yet. <a href="/account">Verify your Ghana Card</a> to publish instantly.<% } %>
+      <% if (listing.status === 'rejected') { %>❌ This listing was not approved<%= listing.moderation_note ? `: ${listing.moderation_note}` : '.' %> Edit it and resubmit.<% } %>
+      <% if (listing.status === 'archived') { %>📦 This listing is archived and hidden from tenants.<% } %>
+      <% if (listing.status === 'rented') { %>🏠 Marked as rented. Tenants can still see it but cannot enquire.<% } %>
+    </div>
+  <% } else if (listing.status === 'rented') { %>
+    <div class="notice">🏠 This home has been rented. <a href="/listings?area=<%= encodeURIComponent(listing.neighbourhood) %>">See similar homes</a>.</div>
+  <% } %>
+
+  <div class="detail">
+    <div>
+      <div class="gallery" data-gallery>
+        <% if (photos.length) { %>
+          <img class="gallery-main" src="/uploads/<%= photos[0].filename %>" alt="<%= listing.title %>" data-main>
+          <% if (photos.length > 1) { %>
+          <div class="thumbs">
+            <% photos.forEach((p, i) => { %><button type="button" class="thumb <%= i === 0 ? 'on' : '' %>" data-src="/uploads/<%= p.filename %>"><img src="/uploads/<%= p.filename %>" alt="Photo <%= i + 1 %>" loading="lazy"></button><% }) %>
+          </div>
+          <% } %>
+        <% } else { %><div class="noimg big">No photos</div><% } %>
+      </div>
+
+      <h1 class="h2"><%= listing.title %></h1>
+      <p class="muted">📍 <%= listing.address %>, <%= listing.neighbourhood %><% if (listing.gps_address) { %> · GhanaPost GPS <strong><%= listing.gps_address %></strong><% } %></p>
+
+      <div class="keyfacts">
+        <div><span>Type</span><strong><%= PROPERTY_TYPES[listing.property_type] %></strong></div>
+        <div><span>Bedrooms</span><strong><%= listing.bedrooms || '—' %></strong></div>
+        <div><span>Bathrooms</span><strong><%= listing.bathrooms %></strong></div>
+        <div><span>Furnishing</span><strong><%= FURNISHING[listing.furnishing] %></strong></div>
+        <div><span>Available</span><strong><%= listing.available_from ? new Date(listing.available_from).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Now' %></strong></div>
+        <div><span>Listed</span><strong><%= timeAgo(listing.created_at) %></strong></div>
+      </div>
+
+      <h2 class="h3">About this home</h2>
+      <div class="prose"><% listing.description.split(/\n+/).forEach(p => { %><p><%= p %></p><% }) %></div>
+
+      <% const am = listing.amenities ? listing.amenities.split(',') : []; if (am.length) { %>
+        <h2 class="h3">Amenities</h2>
+        <ul class="amenities"><% am.forEach(a => { if (AMENITIES[a]) { %><li>✔ <%= AMENITIES[a] %></li><% } }) %></ul>
+      <% } %>
+
+      <% if (similar.length) { %>
+        <h2 class="h3">Similar homes in <%= listing.neighbourhood %></h2>
+        <div class="grid grid-3"><% similar.forEach(l => { %><%- include('partials/card', { l }) %><% }) %></div>
+      <% } %>
+    </div>
+
+    <aside class="side">
+      <div class="panel price-panel">
+        <div class="price big"><%= cedis(listing.rent_ghs) %><span>/month</span></div>
+        <dl class="costs">
+          <dt>Advance required</dt><dd><%= listing.advance_months %> month<%= listing.advance_months === 1 ? '' : 's' %></dd>
+          <dt>Total to move in</dt><dd><strong><%= cedis(totalUpfront(listing)) %></strong></dd>
+          <dt>Agent / viewing fee</dt><dd class="green"><strong>GH₵ 0</strong></dd>
+        </dl>
+        <% if (listing.advance_months > legalAdvanceMonths) { %>
+          <p class="warn small">⚠️ This landlord asks for more than <%= legalAdvanceMonths %> months' advance. The Rent Act limits advance rent to six months — you can negotiate or contact the Rent Control Department.</p>
+        <% } else { %>
+          <p class="ok small">✔ Advance is within the Rent Act's 6-month limit.</p>
+        <% } %>
+
+        <% if (isOwner) { %>
+          <a class="btn btn-block" href="/listings/<%= listing.id %>/edit">Edit listing</a>
+          <p class="small muted center"><%= listing.views %> views</p>
+        <% } else if (user) { %>
+          <form method="post" action="/listings/<%= listing.id %>/favorite">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn-ghost btn-block"><%= isFav ? '♥ Saved' : '♡ Save' %></button>
+          </form>
+        <% } %>
+      </div>
+
+      <div class="panel">
+        <h3 class="h4">Landlord</h3>
+        <p><strong><%= listing.landlord_name %></strong>
+          <% if (listing.landlord_verification === 'verified') { %><br><span class="badge badge-green">✔ Ghana Card verified</span><% } else { %><br><span class="badge badge-grey">Not yet verified</span><% } %>
+          <br><span class="small muted">On <%= siteName %> since <%= new Date(listing.landlord_since.replace(' ', 'T') + 'Z').toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) %></span>
+        </p>
+        <% if (!isOwner && listing.status === 'active') { %>
+          <% if (user) { %>
+            <p class="contact-line">📞 <a href="tel:+<%= listing.landlord_phone %>"><%= prettyPhone(listing.landlord_phone) %></a>
+              <% if (listing.landlord_whatsapp) { %> · <a href="https://wa.me/<%= listing.landlord_phone %>?text=<%= encodeURIComponent(`Hello, I saw your listing "${listing.title}" on ${siteName}. Is it still available?`) %>" target="_blank" rel="noopener">WhatsApp</a><% } %>
+            </p>
+            <div id="contact">
+            <% if (conversation) { %>
+              <a class="btn btn-block" href="/messages/<%= conversation.id %>">Open your chat</a>
+            <% } else { %>
+              <form method="post" action="/listings/<%= listing.id %>/contact" class="stack">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <label class="sr" for="msg">Message</label>
+                <textarea id="msg" name="body" rows="4" required maxlength="2000">Hello, I'm interested in "<%= listing.title %>". Is it still available? When can I come and see it?</textarea>
+                <button class="btn btn-block">Message landlord</button>
+              </form>
+            <% } %>
+            </div>
+          <% } else { %>
+            <a class="btn btn-block" href="/login?next=/listings/<%= listing.id %>">Log in to see phone &amp; message</a>
+            <p class="small muted center">Free account — takes 30 seconds.</p>
+          <% } %>
+        <% } %>
+      </div>
+
+      <% if (!isOwner && listing.status === 'active') { %>
+      <div class="panel" id="viewing">
+        <h3 class="h4">Book a viewing</h3>
+        <% if (!user) { %>
+          <p class="small"><a href="/login?next=/listings/<%= listing.id %>%23viewing">Log in</a> to request a viewing.</p>
+        <% } else if (myViewing) { %>
+          <p>Your viewing on <strong><%= myViewing.preferred_date %></strong> (<%= myViewing.preferred_time %>) is <span class="badge <%= myViewing.status === 'confirmed' ? 'badge-green' : 'badge-gold' %>"><%= myViewing.status %></span>.</p>
+        <% } else { %>
+          <form method="post" action="/listings/<%= listing.id %>/viewings" class="stack">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <label>Date<input type="date" name="date" min="<%= today %>" required></label>
+            <label>Time
+              <select name="time" required>
+                <option value="morning">Morning (8am–12pm)</option>
+                <option value="afternoon">Afternoon (12–4pm)</option>
+                <option value="evening">Evening (4–7pm)</option>
+              </select>
+            </label>
+            <label>Note (optional)<input name="note" maxlength="500" placeholder="e.g. I'll come with my spouse"></label>
+            <button class="btn btn-gold btn-block">Request viewing</button>
+          </form>
+        <% } %>
+      </div>
+      <% } %>
+
+      <div class="panel safety-panel small">
+        <strong>🛡️ Stay safe</strong>
+        <ul>
+          <li>Never pay before you have viewed the property in person.</li>
+          <li>Ask to see proof of ownership (title / indenture) or the owner's authorisation.</li>
+          <li>Sign a written tenancy agreement and get receipts for every payment.</li>
+        </ul>
+        <a href="/safety">Full safety guide</a>
+      </div>
+
+      <% if (!isOwner) { %>
+      <details class="panel small" id="report">
+        <summary>🚩 Report this listing</summary>
+        <form method="post" action="/listings/<%= listing.id %>/report" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <select name="reason" required>
+            <% Object.entries(REPORT_REASONS).forEach(([k, v]) => { %><option value="<%= k %>"><%= v %></option><% }) %>
+          </select>
+          <textarea name="details" rows="3" maxlength="1000" placeholder="What happened? (optional)"></textarea>
+          <button class="btn btn-ghost btn-sm">Send report</button>
+        </form>
+      </details>
+      <% } %>
+    </aside>
+  </div>
+</section>
+<%- include('partials/foot') %>

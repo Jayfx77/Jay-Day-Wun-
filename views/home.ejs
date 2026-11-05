@@ -1,0 +1,72 @@
+<%- include('partials/head') %>
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Accra · Tema · Kasoa</p>
+    <h1>Rent your next home <em>straight from the landlord.</em></h1>
+    <p class="lead">No agent fees. No “viewing fees”. Chat with the property owner, book a viewing and see the real price up front — including how many months of advance they want.</p>
+    <%- include('partials/searchbar') %>
+    <div class="hero-stats">
+      <div><strong><%= stats.active %></strong> homes available</div>
+      <div><strong><%= stats.areas %></strong> neighbourhoods</div>
+      <div><strong><%= stats.verified %></strong> Ghana Card–verified landlords</div>
+      <div><strong>GH₵ 0</strong> agent fees, ever</div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <h2>Newest homes</h2>
+    <a href="/listings">See all →</a>
+  </div>
+  <% if (latest.length) { %>
+    <div class="grid"><% latest.forEach(l => { %><%- include('partials/card', { l }) %><% }) %></div>
+  <% } else { %>
+    <div class="empty">
+      <p><strong>No listings yet — be the first.</strong></p>
+      <p>Are you a landlord in Accra? Post your property for free and reach tenants directly.</p>
+      <a class="btn" href="/register?role=landlord">List your property</a>
+    </div>
+  <% } %>
+</section>
+
+<% if (popular.length) { %>
+<section class="wrap section">
+  <h2>Popular areas</h2>
+  <div class="areas">
+    <% popular.forEach(p => { %>
+      <a class="area" href="/listings?area=<%= encodeURIComponent(p.neighbourhood) %>">
+        <strong><%= p.neighbourhood %></strong>
+        <span class="muted small"><%= p.n %> home<%= p.n === 1 ? '' : 's' %> · from <%= cedis(p.from_ghs) %></span>
+      </a>
+    <% }) %>
+  </div>
+</section>
+<% } %>
+
+<section class="band">
+  <div class="wrap steps">
+    <div><span class="step">1</span><h3>Search</h3><p>Filter by area, budget, bedrooms, advance and amenities like borehole or prepaid meter.</p></div>
+    <div><span class="step">2</span><h3>Chat &amp; view</h3><p>Message the landlord in-app or on WhatsApp and request a viewing time that suits you.</p></div>
+    <div><span class="step">3</span><h3>Sign &amp; move in</h3><p>Sign a tenancy agreement directly with the owner. Pay only after you've seen the place.</p></div>
+  </div>
+</section>
+
+<section class="wrap section split">
+  <div>
+    <h2>Landlords: fill your rooms without middlemen</h2>
+    <ul class="checks">
+      <li>Listing is completely free</li>
+      <li>Tenants contact <em>you</em> directly — you choose who to rent to</li>
+      <li>Get a “Verified landlord” badge with your Ghana Card</li>
+      <li>Manage enquiries and viewing requests from one dashboard</li>
+    </ul>
+    <a class="btn" href="/register?role=landlord">Post a property</a>
+  </div>
+  <div class="callout">
+    <h3>⚖️ Know your rights</h3>
+    <p>Under Ghana's Rent Act, 1963 (Act 220), a landlord should not demand more than <strong>six months' advance</strong> rent. Listings asking ≤ 6 months are highlighted in gold, and you can filter for them.</p>
+    <a href="/safety">Read our safe-renting guide →</a>
+  </div>
+</section>
+<%- include('partials/foot') %>

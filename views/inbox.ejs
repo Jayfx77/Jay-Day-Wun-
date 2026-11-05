@@ -1,0 +1,20 @@
+<%- include('partials/head') %>
+<section class="wrap narrow section">
+  <h1 class="h2">Messages</h1>
+  <% if (conversations.length) { %>
+    <ul class="inbox">
+      <% conversations.forEach(c => { %>
+        <li class="<%= c.unread ? 'unread' : '' %>">
+          <a href="/messages/<%= c.id %>">
+            <div><strong><%= c.other_name %></strong> <span class="muted small">· <%= c.listing_title %></span><% if (c.listing_status !== 'active') { %> <span class="badge badge-grey"><%= c.listing_status %></span><% } %></div>
+            <div class="small muted ellipsis"><%= c.last_body %></div>
+            <div class="small muted"><%= timeAgo(c.updated_at) %><% if (c.unread) { %> · <span class="pill"><%= c.unread %> new</span><% } %></div>
+          </a>
+        </li>
+      <% }) %>
+    </ul>
+  <% } else { %>
+    <div class="empty"><p>No messages yet.</p><% if (user.role === 'tenant') { %><a class="btn" href="/listings">Find a home and message the landlord</a><% } %></div>
+  <% } %>
+</section>
+<%- include('partials/foot') %>

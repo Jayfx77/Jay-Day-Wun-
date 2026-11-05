@@ -1,0 +1,136 @@
+const fs = require('fs');
+const path = require('path');
+const Database = require('better-sqlite3');
+const config = require('./config');
+
+function open(file = config.dbFile) {
+  if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
+  const db = new Database(file);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+  migrate(db);
+  return db;
+}
+
+const MIGRATIONS = [
+  `
+  CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    phone TEXT NOT NULL,
+    whatsapp INTEGER NOT NULL DEFAULT 1,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('tenant','landlord','admin')),
+    verification_status TEXT NOT NULL DEFAULT 'unverified'
+      CHECK (verification_status IN ('unverified','pending','verified','rejected')),
+    ghana_card_number TEXT,
+    ghana_card_file TEXT,
+    verification_note TEXT,
+    suspended INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE sessions (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    csrf TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+  );
+
+  CREATE TABLE listings (
+    id INTEGER PRIMARY KEY,
+    landlord_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    property_type TEXT NOT NULL,
+    neighbourhood TEXT NOT NULL,
+    address TEXT NOT NULL,
+    gps_address TEXT,
+    bedrooms INTEGER NOT NULL DEFAULT 1,
+    bathrooms INTEGER NOT NULL DEFAULT 1,
+    rent_ghs INTEGER NOT NULL,
+    advance_months INTEGER NOT NULL,
+    furnishing TEXT NOT NULL,
+    amenities TEXT NOT NULL DEFAULT '',
+    available_from TEXT,
+    status TEXT NOT NULL DEFAULT 'pending'
+      CHECK (status IN ('pending','active','rented','rejected','archived')),
+    moderation_note TEXT,
+    views INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX idx_listings_search ON listings(status, neighbourhood, rent_ghs);
+  CREATE INDEX idx_listings_landlord ON listings(landlord_id);
+
+  CREATE TABLE listing_photos (
+    id INTEGER PRIMARY KEY,
+    listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+    filename TEXT NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX idx_photos_listing ON listing_photos(listing_id, position);
+
+  CREATE TABLE favorites (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (user_id, listing_id)
+  );
+
+  CREATE TABLE conversations (
+    id INTEGER PRIMARY KEY,
+    listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+    tenant_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    landlord_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (listing_id, tenant_id)
+  );
+
+  CREATE TABLE messages (
+    id INTEGER PRIMARY KEY,
+    conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    read_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX idx_messages_conv ON messages(conversation_id, id);
+
+  CREATE TABLE viewings (
+    id INTEGER PRIMARY KEY,
+    listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+    tenant_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    preferred_date TEXT NOT NULL,
+    preferred_time TEXT NOT NULL,
+    note TEXT,
+    status TEXT NOT NULL DEFAULT 'requested'
+      CHECK (status IN ('requested','confirmed','declined','cancelled')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE reports (
+    id INTEGER PRIMARY KEY,
+    listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+    reporter_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    reason TEXT NOT NULL,
+    details TEXT,
+    status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','resolved')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  `,
+];
+
+function migrate(db) {
+  const version = db.pragma('user_version', { simple: true });
+  for (let i = version; i < MIGRATIONS.length; i++) {
+    db.transaction(() => {
+      db.exec(MIGRATIONS[i]);
+      db.pragma(`user_version = ${i + 1}`);
+    })();
+  }
+}
+
+module.exports = { open };

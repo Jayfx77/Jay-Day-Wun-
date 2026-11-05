@@ -1,0 +1,18 @@
+<form class="searchbar" method="get" action="/listings">
+  <label><span>Area</span>
+    <select name="area">
+      <option value="">All of Accra</option>
+      <% NEIGHBOURHOODS.forEach(n => { %><option <%= query.area === n ? 'selected' : '' %>><%= n %></option><% }) %>
+    </select>
+  </label>
+  <label><span>Max rent / month (GH₵)</span>
+    <input type="number" name="max" min="0" step="50" placeholder="Any" value="<%= query.max || '' %>">
+  </label>
+  <label><span>Bedrooms</span>
+    <select name="beds">
+      <option value="">Any</option>
+      <% [1,2,3,4].forEach(b => { %><option value="<%= b %>" <%= String(query.beds) === String(b) ? 'selected' : '' %>><%= b %>+</option><% }) %>
+    </select>
+  </label>
+  <button class="btn btn-gold">Search</button>
+</form>

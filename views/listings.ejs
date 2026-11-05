@@ -1,0 +1,58 @@
+<%- include('partials/head') %>
+<section class="wrap section">
+  <h1 class="h2">Homes for rent<%= query.area ? ` in ${query.area}` : ' in Accra' %></h1>
+  <%- include('partials/searchbar') %>
+  <div class="results-layout">
+    <form class="filters" method="get" action="/listings">
+      <input type="hidden" name="area" value="<%= query.area || '' %>">
+      <input type="hidden" name="max" value="<%= query.max || '' %>">
+      <input type="hidden" name="beds" value="<%= query.beds || '' %>">
+      <label>Keyword<input name="q" value="<%= query.q || '' %>" placeholder="e.g. near Accra Mall"></label>
+      <label>Min rent (GH₵)<input type="number" name="min" min="0" step="50" value="<%= query.min || '' %>"></label>
+      <label>Type
+        <select name="type"><option value="">Any type</option>
+          <% Object.entries(PROPERTY_TYPES).forEach(([k, v]) => { %><option value="<%= k %>" <%= query.type === k ? 'selected' : '' %>><%= v %></option><% }) %>
+        </select>
+      </label>
+      <label>Furnishing
+        <select name="furnishing"><option value="">Any</option>
+          <% Object.entries(FURNISHING).forEach(([k, v]) => { %><option value="<%= k %>" <%= query.furnishing === k ? 'selected' : '' %>><%= v %></option><% }) %>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" name="legal" value="1" <%= query.legal === '1' ? 'checked' : '' %>> Max <%= legalAdvanceMonths %> months advance</label>
+      <label class="check"><input type="checkbox" name="verified" value="1" <%= query.verified === '1' ? 'checked' : '' %>> Verified landlords only</label>
+      <fieldset><legend>Must have</legend>
+        <% const chosen = [].concat(query.amenity || []); Object.entries(AMENITIES).forEach(([k, v]) => { %>
+          <label class="check"><input type="checkbox" name="amenity" value="<%= k %>" <%= chosen.includes(k) ? 'checked' : '' %>> <%= v %></label>
+        <% }) %>
+      </fieldset>
+      <label>Sort by
+        <select name="sort">
+          <option value="newest">Newest</option>
+          <option value="price_asc" <%= query.sort === 'price_asc' ? 'selected' : '' %>>Rent: low to high</option>
+          <option value="price_desc" <%= query.sort === 'price_desc' ? 'selected' : '' %>>Rent: high to low</option>
+          <option value="upfront_asc" <%= query.sort === 'upfront_asc' ? 'selected' : '' %>>Lowest upfront payment</option>
+        </select>
+      </label>
+      <button class="btn">Apply filters</button>
+      <a class="small" href="/listings">Clear all</a>
+    </form>
+    <div>
+      <p class="muted"><%= result.total %> home<%= result.total === 1 ? '' : 's' %> found</p>
+      <% if (result.rows.length) { %>
+        <div class="grid grid-3"><% result.rows.forEach(l => { %><%- include('partials/card', { l }) %><% }) %></div>
+      <% } else { %>
+        <div class="empty"><p><strong>No homes match those filters yet.</strong></p><p>Try a bigger budget or a nearby area. New homes are added every day.</p></div>
+      <% } %>
+      <% if (result.pages > 1) { %>
+        <nav class="pager">
+          <% const qs = (p) => { const u = new URLSearchParams(); Object.entries(query).forEach(([k, v]) => { if (k !== 'page' && k !== 'ok') [].concat(v).forEach(x => u.append(k, x)); }); u.set('page', p); return u.toString(); }; %>
+          <% if (result.page > 1) { %><a class="btn btn-ghost" href="/listings?<%= qs(result.page - 1) %>">← Previous</a><% } %>
+          <span>Page <%= result.page %> of <%= result.pages %></span>
+          <% if (result.page < result.pages) { %><a class="btn btn-ghost" href="/listings?<%= qs(result.page + 1) %>">Next →</a><% } %>
+        </nav>
+      <% } %>
+    </div>
+  </div>
+</section>
+<%- include('partials/foot') %>
