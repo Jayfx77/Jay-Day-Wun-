@@ -34,4 +34,5 @@
   </div>
 </header>
 <main>
+<% if (user && !user.phone_verified && user.role !== 'admin' && path !== '/verify-phone') { %><div class="wrap"><div class="notice verify-banner">📱 Please <a href="/verify-phone?next=<%= encodeURIComponent(path) %>">verify your phone number</a> to message landlords, book viewings and list property.</div></div><% } %>
 <% if (flash) { %><div class="wrap"><div class="flash" role="status"><%= flash %></div></div><% } %>

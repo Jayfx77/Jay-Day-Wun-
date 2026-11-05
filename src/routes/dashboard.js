@@ -4,7 +4,7 @@ const { normalisePhone, validGhanaCard } = require('../helpers');
 const uploads = require('../uploads');
 const { listingCards } = require('../listingQueries');
 
-module.exports = (db, { notify }) => {
+module.exports = (db, { notify, phone: phoneCheck }) => {
   const r = express.Router();
   const cards = listingCards(db);
 
@@ -63,12 +63,18 @@ module.exports = (db, { notify }) => {
       if (newPw.length < 8) errors.push('New password must be at least 8 characters.');
     }
     if (errors.length) return res.status(400).render('account', { title: 'My account', errors, welcome: false });
-    db.prepare('UPDATE users SET name = ?, phone = ?, whatsapp = ?, sms_alerts = ? WHERE id = ?')
-      .run(name, phone, req.body.whatsapp === '1' ? 1 : 0, req.body.sms_alerts === '1' ? 1 : 0, req.user.id);
+    const phoneChanged = phone !== req.user.phone && req.user.role !== 'admin';
+    db.prepare(`UPDATE users SET name = ?, phone = ?, whatsapp = ?, sms_alerts = ?,
+      phone_verified = CASE WHEN ? THEN 0 ELSE phone_verified END WHERE id = ?`)
+      .run(name, phone, req.body.whatsapp === '1' ? 1 : 0, req.body.sms_alerts === '1' ? 1 : 0, phoneChanged ? 1 : 0, req.user.id);
     if (newPw) {
       db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(newPw), req.user.id);
       // Sign out other devices.
       db.prepare("DELETE FROM sessions WHERE user_id = ? AND csrf != ?").run(req.user.id, req.csrfToken);
+    }
+    if (phoneChanged) {
+      phoneCheck.sendCode({ ...req.user, phone });
+      return res.redirect('/verify-phone?next=/account');
     }
     res.redirect(`/account?ok=${encodeURIComponent('Account updated.')}`);
   });

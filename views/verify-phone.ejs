@@ -1,0 +1,21 @@
+<%- include('partials/head') %>
+<section class="wrap narrow-sm section">
+  <h1 class="h2">Verify your phone number</h1>
+  <p>We sent a 6-digit code by SMS to <strong><%= prettyPhone(user.phone) %></strong>. It expires in <%= minutes %> minutes.</p>
+  <p class="small muted">Verified numbers keep <%= siteName %> free of fake accounts and scammers. Once you're verified you can see landlords' numbers, send messages and book viewings.</p>
+  <% if (info) { %><div class="flash" role="status"><%= info %></div><% } %>
+  <% if (error) { %><div class="errors" role="alert"><%= error %></div><% } %>
+  <form method="post" action="/verify-phone" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="next" value="<%= next %>">
+    <label>6-digit code<input name="code" required inputmode="numeric" autocomplete="one-time-code" pattern="\d{6}" maxlength="6" autofocus class="code-input"></label>
+    <button class="btn btn-block">Verify</button>
+  </form>
+  <form method="post" action="/verify-phone/resend" class="center">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="next" value="<%= next %>">
+    <button class="linklike small green">Didn't get it? Send a new code</button>
+  </form>
+  <p class="center small muted">Wrong number? <a href="/account">Change it on your account page</a>. You can keep browsing homes in the meantime — <a href="/listings">browse now</a>.</p>
+</section>
+<%- include('partials/foot') %>

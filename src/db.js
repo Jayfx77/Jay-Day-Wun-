@@ -149,6 +149,22 @@ const MIGRATIONS = [
   );
   CREATE INDEX idx_sms_user ON sms_log(user_id, kind, ref, created_at);
   `,
+  `
+  ALTER TABLE users ADD COLUMN phone_verified INTEGER NOT NULL DEFAULT 0;
+  UPDATE users SET phone_verified = 1 WHERE role = 'admin';
+
+  CREATE TABLE phone_codes (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    phone TEXT NOT NULL,
+    code_hash TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+  );
+  CREATE INDEX idx_phone_codes_user ON phone_codes(user_id, id);
+  `,
 ];
 
 function migrate(db) {

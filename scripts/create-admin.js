@@ -13,8 +13,8 @@ function upsertAdmin(db, { name, email, phone, password }) {
       .run(hashPassword(password), existing.id);
     return existing.id;
   }
-  return db.prepare(`INSERT INTO users (name, email, phone, password_hash, role, verification_status)
-    VALUES (?, ?, ?, ?, 'admin', 'verified')`)
+  return db.prepare(`INSERT INTO users (name, email, phone, password_hash, role, verification_status, phone_verified)
+    VALUES (?, ?, ?, ?, 'admin', 'verified', 1)`)
     .run(name || 'Administrator', email, normalisePhone(phone) || '233200000000', hashPassword(password))
     .lastInsertRowid;
 }

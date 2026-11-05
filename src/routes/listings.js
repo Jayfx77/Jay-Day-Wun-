@@ -2,6 +2,7 @@ const express = require('express');
 const config = require('../config');
 const { PROPERTY_TYPES, FURNISHING, AMENITIES, NEIGHBOURHOODS, REPORT_REASONS } = require('../constants');
 const { verifyCsrf, requireUser, requireRole } = require('../auth');
+const { requirePhoneVerified } = require('../phoneVerification');
 const { validGps } = require('../helpers');
 const uploads = require('../uploads');
 const { listingCards } = require('../listingQueries');
@@ -48,7 +49,7 @@ module.exports = (db, { notify }) => {
   const cards = listingCards(db);
 
   const getListing = db.prepare(`SELECT l.*, u.name landlord_name, u.phone landlord_phone, u.whatsapp landlord_whatsapp,
-    u.verification_status landlord_verification, u.created_at landlord_since, u.suspended landlord_suspended
+    u.verification_status landlord_verification, u.phone_verified landlord_phone_verified, u.created_at landlord_since, u.suspended landlord_suspended
     FROM listings l JOIN users u ON u.id = l.landlord_id WHERE l.id = ?`);
   const getPhotos = db.prepare('SELECT * FROM listing_photos WHERE listing_id = ? ORDER BY position, id');
 
@@ -89,14 +90,14 @@ module.exports = (db, { notify }) => {
   });
 
   // ---------- Create ----------
-  r.get('/listings/new', requireRole('landlord', 'admin'), (req, res) => {
+  r.get('/listings/new', requireRole('landlord', 'admin'), requirePhoneVerified, (req, res) => {
     res.render('listing-form', {
       title: 'List your property', listing: { advance_months: 6, bedrooms: 1, bathrooms: 1, furnishing: 'unfurnished', amenities: '' },
       photos: [], errors: [],
     });
   });
 
-  r.post('/listings', requireRole('landlord', 'admin'), uploads.parse('photos', config.maxPhotos), verifyCsrf, (req, res) => {
+  r.post('/listings', requireRole('landlord', 'admin'), requirePhoneVerified, uploads.parse('photos', config.maxPhotos), verifyCsrf, (req, res) => {
     const { v, errors } = readListingForm(req.body);
     if (req.uploadError) errors.push(req.uploadError);
     if (!req.files || !req.files.length) errors.push('Add at least one real photo of the property.');
@@ -240,7 +241,7 @@ module.exports = (db, { notify }) => {
     res.redirect(back);
   });
 
-  r.post('/listings/:id/contact', requireUser, verifyCsrf, (req, res) => {
+  r.post('/listings/:id/contact', requireUser, requirePhoneVerified, verifyCsrf, (req, res) => {
     const listing = activeListing(req.params.id);
     if (!listing) return res.status(404).render('error', { title: 'Unavailable', message: 'This listing is no longer accepting enquiries.' });
     if (listing.landlord_id === req.user.id) return res.redirect(`/listings/${listing.id}`);
@@ -260,7 +261,7 @@ module.exports = (db, { notify }) => {
     res.redirect(`/messages/${convId}`);
   });
 
-  r.post('/listings/:id/viewings', requireUser, verifyCsrf, (req, res) => {
+  r.post('/listings/:id/viewings', requireUser, requirePhoneVerified, verifyCsrf, (req, res) => {
     const listing = activeListing(req.params.id);
     if (!listing) return res.status(404).render('error', { title: 'Unavailable', message: 'This listing is no longer accepting viewings.' });
     if (listing.landlord_id === req.user.id) return res.redirect(`/listings/${listing.id}`);

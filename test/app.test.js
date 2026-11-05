@@ -59,12 +59,19 @@ function client() {
   };
 }
 
-async function register(c, role, email) {
+let phoneSeq = 10;
+// Registers and completes SMS phone verification using the code recorded in sms_log.
+async function register(c, role, email, phone = `020${String(phoneSeq++).padStart(7, '0')}`) {
   const _csrf = await c.csrf('/register');
   const r = await c.post('/register', {
-    _csrf, role, name: `Test ${role}`, email, phone: '024 123 4567', password: 'password123', password2: 'password123', agree: '1', whatsapp: '1',
+    _csrf, role, name: `Test ${role}`, email, phone, password: 'password123', password2: 'password123', agree: '1', whatsapp: '1',
   });
   assert.equal(r.status, 302, r.text.slice(0, 500));
+  assert.match(r.headers.get('location'), /^\/verify-phone/);
+  const intl = `233${phone.replace(/\D/g, '').slice(1)}`;
+  const code = db.prepare("SELECT body FROM sms_log WHERE phone = ? AND kind = 'verify' ORDER BY id DESC").get(intl).body.slice(0, 6);
+  const v = await c.post('/verify-phone', { _csrf: await c.csrf('/verify-phone'), code, next: '/dashboard' });
+  assert.equal(v.status, 302, v.text.slice(0, 500));
   return r;
 }
 
@@ -108,7 +115,7 @@ test('registration validates input', async () => {
 
 test('full landlord → admin → tenant flow', async () => {
   const landlord = client();
-  await register(landlord, 'landlord', 'landlord@test.gh');
+  await register(landlord, 'landlord', 'landlord@test.gh', '024 123 4567');
 
   // Tenants cannot create listings.
   const tenant = client();

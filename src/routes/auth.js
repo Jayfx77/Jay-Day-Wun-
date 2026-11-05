@@ -2,12 +2,13 @@ const crypto = require('crypto');
 const express = require('express');
 const config = require('../config');
 const rateLimit = require('express-rate-limit');
-const { hashPassword, verifyPassword, createSession, destroySession, verifyCsrf } = require('../auth');
+const { hashPassword, verifyPassword, createSession, destroySession, verifyCsrf, requireUser } = require('../auth');
+const { CODE_MINUTES } = require('../phoneVerification');
 const { normalisePhone } = require('../helpers');
 
 const safeNext = (n) => (typeof n === 'string' && /^\/(?![/\\])/.test(n) ? n : '/dashboard');
 
-module.exports = (db, { sms, mailer }) => {
+module.exports = (db, { sms, mailer, phone: phoneCheck }) => {
   const r = express.Router();
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -51,8 +52,9 @@ module.exports = (db, { sms, mailer }) => {
     const id = db.prepare(`INSERT INTO users (name, email, phone, whatsapp, password_hash, role)
       VALUES (?, ?, ?, ?, ?, ?)`).run(v.name, v.email, phone, v.whatsapp, hashPassword(password), v.role).lastInsertRowid;
     createSession(db, res, id);
+    phoneCheck.sendCode(db.prepare('SELECT * FROM users WHERE id = ?').get(id));
     const dest = v.role === 'landlord' ? '/account?welcome=1' : safeNext(req.body.next);
-    res.redirect(dest);
+    res.redirect(`/verify-phone?next=${encodeURIComponent(dest)}`);
   });
 
   r.get('/login', (req, res) => {
@@ -88,7 +90,7 @@ module.exports = (db, { sms, mailer }) => {
     const id = String(identifier || '').trim().toLowerCase();
     if (id.includes('@')) return db.prepare('SELECT * FROM users WHERE email = ?').get(id);
     const phone = normalisePhone(id);
-    return phone ? db.prepare('SELECT * FROM users WHERE phone = ? ORDER BY id DESC LIMIT 1').get(phone) : null;
+    return phone ? db.prepare('SELECT * FROM users WHERE phone = ? ORDER BY phone_verified DESC, id DESC LIMIT 1').get(phone) : null;
   }
 
   const activeReset = db.prepare(`SELECT * FROM password_resets WHERE user_id = ? AND used_at IS NULL AND expires_at > ?
@@ -183,6 +185,29 @@ module.exports = (db, { sms, mailer }) => {
       return fail('That code is wrong or has expired. Request a new one.');
     }
     finishReset(req, res, reset, password, String(req.body.password2 || ''), fail);
+  });
+
+  // ---------- Phone verification ----------
+  const verifyView = (req, res, extra = {}) => res.status(extra.error ? 400 : 200).render('verify-phone', {
+    title: 'Verify your phone', next: safeNext(req.query.next || req.body?.next), error: null, info: null, minutes: CODE_MINUTES, ...extra,
+  });
+
+  r.get('/verify-phone', requireUser, (req, res) => {
+    if (req.user.phone_verified) return res.redirect(safeNext(req.query.next));
+    verifyView(req, res);
+  });
+
+  r.post('/verify-phone', requireUser, limiter, verifyCsrf, (req, res) => {
+    if (req.user.phone_verified) return res.redirect(safeNext(req.body.next));
+    const result = phoneCheck.checkCode(req.user, req.body.code);
+    if (!result.ok) return verifyView(req, res, { error: result.error });
+    res.redirect(`${safeNext(req.body.next)}${safeNext(req.body.next).includes('?') ? '&' : '?'}ok=${encodeURIComponent('Phone number verified. Thank you!')}`);
+  });
+
+  r.post('/verify-phone/resend', requireUser, limiter, verifyCsrf, (req, res) => {
+    if (req.user.phone_verified) return res.redirect(safeNext(req.body.next));
+    const result = phoneCheck.sendCode(req.user);
+    verifyView(req, res, result.ok ? { info: 'A new code is on its way.' } : { error: result.error });
   });
 
   r.post('/logout', verifyCsrf, (req, res) => {

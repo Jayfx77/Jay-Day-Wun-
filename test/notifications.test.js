@@ -26,8 +26,8 @@ before(async () => {
   await new Promise((r) => server.once('listening', r));
   base = `http://127.0.0.1:${server.address().port}`;
 
-  const add = db.prepare(`INSERT INTO users (name, email, phone, password_hash, role, verification_status)
-    VALUES (?, ?, ?, ?, ?, ?)`);
+  const add = db.prepare(`INSERT INTO users (name, email, phone, password_hash, role, verification_status, phone_verified)
+    VALUES (?, ?, ?, ?, ?, ?, 1)`);
   const pw = hashPassword('old-password');
   const landlord = add.run('Ama Landlord', 'ama@test.gh', '233241000001', pw, 'landlord', 'verified').lastInsertRowid;
   add.run('Esi Tenant', 'esi@test.gh', '233271000004', pw, 'tenant', 'unverified');
