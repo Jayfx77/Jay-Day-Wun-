@@ -1,0 +1,23 @@
+<%- include('partials/head') %>
+<section class="wrap narrow-sm section">
+  <h1 class="h2">Create your free account</h1>
+  <%- include('partials/errors') %>
+  <form method="post" action="/register" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="next" value="<%= next || '' %>">
+    <div class="role-pick">
+      <label class="role-opt"><input type="radio" name="role" value="tenant" <%= values.role !== 'landlord' ? 'checked' : '' %>><span><strong>I'm looking for a home</strong><small>Search, chat with landlords, book viewings</small></span></label>
+      <label class="role-opt"><input type="radio" name="role" value="landlord" <%= values.role === 'landlord' ? 'checked' : '' %>><span><strong>I'm a landlord</strong><small>List properties free and find tenants directly</small></span></label>
+    </div>
+    <label>Full name<input name="name" required maxlength="80" autocomplete="name" value="<%= values.name || '' %>"></label>
+    <label>Email<input type="email" name="email" required autocomplete="email" value="<%= values.email || '' %>"></label>
+    <label>Mobile number<input type="tel" name="phone" required autocomplete="tel" placeholder="024 123 4567" value="<%= values.phone || '' %>"></label>
+    <label class="check"><input type="checkbox" name="whatsapp" value="1" <%= values.whatsapp === 0 ? '' : 'checked' %>> This number is on WhatsApp</label>
+    <label>Password<input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+    <label>Confirm password<input type="password" name="password2" required minlength="8" autocomplete="new-password"></label>
+    <label class="check"><input type="checkbox" name="agree" value="1" required> I agree to the <a href="/terms" target="_blank">terms &amp; privacy policy</a>.</label>
+    <button class="btn btn-gold btn-block">Create account</button>
+    <p class="center small">Already have an account? <a href="/login<%= next ? `?next=${encodeURIComponent(next)}` : '' %>">Log in</a></p>
+  </form>
+</section>
+<%- include('partials/foot') %>

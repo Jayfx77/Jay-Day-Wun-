@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en-GH">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title ? `${title} · ${siteName}` : `${siteName} — Rent direct from landlords in Accra, no agent fees` %></title>
+  <meta name="description" content="Find apartments, chamber & halls and houses for rent across Accra directly from verified landlords. No agents, no agent fees.">
+  <meta name="theme-color" content="#0b6b3a">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="/"><span class="brand-mark">◆</span> <%= siteName %></a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Menu">
+    <label for="nav-toggle" class="nav-burger" aria-hidden="true"><span></span><span></span><span></span></label>
+    <nav class="nav">
+      <a href="/listings" class="<%= path === '/listings' ? 'active' : '' %>">Find a home</a>
+      <a href="/how-it-works">How it works</a>
+      <a href="/safety">Safety</a>
+      <% if (user) { %>
+        <a href="/messages">Messages<% if (unreadCount) { %> <span class="pill"><%= unreadCount %></span><% } %></a>
+        <a href="/dashboard">Dashboard</a>
+        <% if (user.role === 'admin') { %><a href="/admin">Admin</a><% } %>
+        <% if (user.role !== 'tenant') { %><a class="btn btn-gold btn-sm" href="/listings/new">+ List property</a><% } %>
+        <form method="post" action="/logout" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="linklike">Log out</button></form>
+      <% } else { %>
+        <a href="/login">Log in</a>
+        <a class="btn btn-gold btn-sm" href="/register?role=landlord">List your property free</a>
+      <% } %>
+    </nav>
+  </div>
+</header>
+<main>
+<% if (flash) { %><div class="wrap"><div class="flash" role="status"><%= flash %></div></div><% } %>

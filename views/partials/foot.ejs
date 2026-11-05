@@ -1,0 +1,31 @@
+</main>
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>
+      <div class="brand"><span class="brand-mark">◆</span> <%= siteName %></div>
+      <p class="muted">Rent directly from landlords in Accra. No agents. No agent fees. No viewing fees.</p>
+    </div>
+    <div>
+      <strong>Tenants</strong>
+      <a href="/listings">Browse homes</a>
+      <a href="/safety">Renting safely</a>
+      <a href="/register">Create account</a>
+    </div>
+    <div>
+      <strong>Landlords</strong>
+      <a href="/register?role=landlord">List for free</a>
+      <a href="/how-it-works#landlords">How listing works</a>
+      <a href="/account">Get verified</a>
+    </div>
+    <div>
+      <strong>Help</strong>
+      <a href="/terms">Terms &amp; privacy</a>
+      <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a>
+      <% if (supportPhone) { %><span><%= supportPhone %></span><% } %>
+      <span class="muted small">Rent Control Department disputes: visit your nearest Rent Office.</span>
+    </div>
+  </div>
+  <div class="wrap small muted copyright">© <%= new Date().getFullYear() %> <%= siteName %>. Made in Accra.</div>
+</footer>
+</body>
+</html>

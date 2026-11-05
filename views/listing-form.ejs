@@ -1,0 +1,105 @@
+<%- include('partials/head') %>
+<% const isEdit = !!listing.id; const L = listing; const chosen = (L.amenities || '').split(','); %>
+<section class="wrap narrow section">
+  <h1 class="h2"><%= isEdit ? 'Edit listing' : 'List your property — free' %></h1>
+  <% if (!isEdit && user.verification_status !== 'verified' && user.role !== 'admin') { %>
+    <div class="notice">Your listing will be reviewed before it goes live (usually within a day). <a href="/account">Verify your Ghana Card</a> to publish instantly and earn the verified badge.</div>
+  <% } %>
+  <%- include('partials/errors') %>
+  <form method="post" action="<%= isEdit ? `/listings/${L.id}` : '/listings' %>" enctype="multipart/form-data" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <fieldset><legend>The basics</legend>
+      <label>Title<input name="title" required minlength="10" maxlength="120" value="<%= L.title || '' %>" placeholder="e.g. Newly built 2-bedroom apartment off Spintex Road"></label>
+      <div class="row">
+        <label>Property type
+          <select name="property_type" required><option value="">Choose…</option>
+            <% Object.entries(PROPERTY_TYPES).forEach(([k, v]) => { %><option value="<%= k %>" <%= L.property_type === k ? 'selected' : '' %>><%= v %></option><% }) %>
+          </select>
+        </label>
+        <label>Furnishing
+          <select name="furnishing" required>
+            <% Object.entries(FURNISHING).forEach(([k, v]) => { %><option value="<%= k %>" <%= L.furnishing === k ? 'selected' : '' %>><%= v %></option><% }) %>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label>Bedrooms<input type="number" name="bedrooms" min="0" max="20" required value="<%= L.bedrooms ?? 1 %>"></label>
+        <label>Bathrooms<input type="number" name="bathrooms" min="0" max="20" required value="<%= L.bathrooms ?? 1 %>"></label>
+      </div>
+      <label>Description<textarea name="description" rows="7" required minlength="40" maxlength="5000" placeholder="Describe the rooms, the compound, water and light situation, who else lives in the house, nearby landmarks, road condition, house rules…"><%= L.description || '' %></textarea></label>
+    </fieldset>
+
+    <fieldset><legend>Location</legend>
+      <label>Neighbourhood
+        <select name="neighbourhood" required><option value="">Choose…</option>
+          <% NEIGHBOURHOODS.forEach(n => { %><option <%= L.neighbourhood === n ? 'selected' : '' %>><%= n %></option><% }) %>
+        </select>
+      </label>
+      <label>Street / landmark<input name="address" required maxlength="200" value="<%= L.address || '' %>" placeholder="e.g. Behind Shell filling station, Baatsona"></label>
+      <label>GhanaPost GPS address <span class="muted">(optional, recommended)</span><input name="gps_address" maxlength="20" value="<%= L.gps_address || '' %>" placeholder="GA-123-4567"></label>
+    </fieldset>
+
+    <fieldset><legend>Rent &amp; terms</legend>
+      <div class="row">
+        <label>Monthly rent (GH₵)<input type="number" name="rent_ghs" min="50" step="1" required value="<%= L.rent_ghs || '' %>"></label>
+        <label>Advance required (months)<input type="number" name="advance_months" min="1" max="36" required value="<%= L.advance_months ?? 6 %>"></label>
+      </div>
+      <p class="small muted">The Rent Act, 1963 (Act 220) limits advance rent to six months. Listings asking ≤ <%= legalAdvanceMonths %> months get a highlighted badge and appear in the “legal advance” filter.</p>
+      <label>Available from <span class="muted">(leave empty if available now)</span><input type="date" name="available_from" value="<%= L.available_from || '' %>"></label>
+    </fieldset>
+
+    <fieldset><legend>Amenities</legend>
+      <div class="checkgrid">
+        <% Object.entries(AMENITIES).forEach(([k, v]) => { %><label class="check"><input type="checkbox" name="amenities" value="<%= k %>" <%= chosen.includes(k) ? 'checked' : '' %>> <%= v %></label><% }) %>
+      </div>
+    </fieldset>
+
+    <fieldset><legend>Photos</legend>
+      <% if (photos.length) { %>
+        <div class="photo-admin">
+          <% photos.forEach((p, i) => { %>
+            <div class="photo-item">
+              <img src="/uploads/<%= p.filename %>" alt="">
+              <% if (i === 0) { %><span class="badge badge-green">Cover</span><% } else { %>
+                <button class="btn btn-ghost btn-sm" formaction="/listings/<%= L.id %>/photos/<%= p.id %>/cover" formenctype="application/x-www-form-urlencoded" formnovalidate>Make cover</button>
+              <% } %>
+              <% if (photos.length > 1) { %>
+                <button class="btn btn-ghost btn-sm danger" formaction="/listings/<%= L.id %>/photos/<%= p.id %>/delete" formenctype="application/x-www-form-urlencoded" formnovalidate data-confirm="Delete this photo?">Delete</button>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+      <label><%= isEdit ? 'Add more photos' : 'Upload photos' %> <span class="muted">(JPG/PNG/WebP, up to 10, max 6 MB each)</span>
+        <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple <%= isEdit ? '' : 'required' %> data-preview>
+      </label>
+      <div class="preview" data-preview-out></div>
+      <p class="small muted">Use real, recent photos of this exact property — bedroom, bathroom, kitchen, compound and the street. Listings with stock or borrowed photos are removed.</p>
+    </fieldset>
+
+    <% if (!isEdit) { %>
+      <label class="check"><input type="checkbox" name="owner_confirm" value="1" required> I am the owner of this property, or I have the owner's written authority to let it. I will not charge tenants any agent, commission or viewing fee.</label>
+    <% } %>
+    <button class="btn btn-gold"><%= isEdit ? 'Save changes' : 'Publish listing' %></button>
+  </form>
+
+  <% if (isEdit) { %>
+    <div class="danger-zone">
+      <h2 class="h4">Listing status: <span class="badge"><%= L.status %></span></h2>
+      <div class="row-btns">
+        <% if (L.status === 'active') { %>
+          <form method="post" action="/listings/<%= L.id %>/status"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="status" value="rented"><button class="btn btn-ghost">Mark as rented</button></form>
+        <% } %>
+        <% if (['rented','archived'].includes(L.status)) { %>
+          <form method="post" action="/listings/<%= L.id %>/status"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="status" value="relist"><button class="btn btn-ghost">Relist (available again)</button></form>
+        <% } %>
+        <% if (L.status !== 'archived') { %>
+          <form method="post" action="/listings/<%= L.id %>/status"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="status" value="archived"><button class="btn btn-ghost">Hide (archive)</button></form>
+        <% } %>
+        <form method="post" action="/listings/<%= L.id %>/delete" data-confirm="Permanently delete this listing and its photos?"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost danger">Delete permanently</button></form>
+      </div>
+    </div>
+  <% } %>
+</section>
+<%- include('partials/foot') %>

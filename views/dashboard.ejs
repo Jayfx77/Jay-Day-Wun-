@@ -1,0 +1,89 @@
+<%- include('partials/head') %>
+<section class="wrap section">
+  <div class="section-head">
+    <h1 class="h2">Hi, <%= user.name.split(' ')[0] %></h1>
+    <% if (user.role !== 'tenant') { %><a class="btn btn-gold" href="/listings/new">+ New listing</a><% } else { %><a class="btn" href="/listings">Find a home</a><% } %>
+  </div>
+
+  <% if (user.role === 'landlord' && user.verification_status !== 'verified') { %>
+    <div class="notice">
+      <% if (user.verification_status === 'pending') { %>⏳ Your Ghana Card verification is being reviewed.
+      <% } else { %>🔒 <a href="/account">Verify your identity with your Ghana Card</a> — verified landlords publish instantly and get more enquiries.<% } %>
+    </div>
+  <% } %>
+
+  <% if (typeof myListings !== 'undefined') { %>
+    <h2 class="h3">My listings</h2>
+    <% if (myListings.length) { %>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>Listing</th><th>Rent</th><th>Status</th><th>Views</th><th></th></tr></thead>
+        <tbody>
+        <% myListings.forEach(l => { %>
+          <tr>
+            <td><a href="/listings/<%= l.id %>"><%= l.title %></a><br><span class="small muted"><%= l.neighbourhood %></span></td>
+            <td><%= cedis(l.rent_ghs) %></td>
+            <td><span class="badge status-<%= l.status %>"><%= l.status %></span></td>
+            <td><%= l.views %></td>
+            <td class="nowrap">
+              <a class="btn btn-ghost btn-sm" href="/listings/<%= l.id %>/edit">Edit</a>
+              <% if (l.status === 'active') { %>
+                <form method="post" action="/listings/<%= l.id %>/status" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="status" value="rented"><button class="btn btn-ghost btn-sm">Mark rented</button></form>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table></div>
+    <% } else { %>
+      <div class="empty"><p>You haven't listed anything yet.</p><a class="btn" href="/listings/new">List your first property</a></div>
+    <% } %>
+
+    <h2 class="h3">Viewing requests</h2>
+    <% if (incomingViewings.length) { %>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>When</th><th>Tenant</th><th>Property</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        <% incomingViewings.forEach(v => { %>
+          <tr>
+            <td><%= v.preferred_date %><br><span class="small muted"><%= v.preferred_time %></span></td>
+            <td><%= v.tenant_name %><br><a class="small" href="tel:+<%= v.tenant_phone %>"><%= prettyPhone(v.tenant_phone) %></a><% if (v.note) { %><br><span class="small muted">“<%= v.note %>”</span><% } %></td>
+            <td><a href="/listings/<%= v.listing_id %>"><%= v.listing_title %></a></td>
+            <td><span class="badge <%= v.status === 'confirmed' ? 'badge-green' : 'badge-gold' %>"><%= v.status %></span></td>
+            <td class="nowrap">
+              <% const btn = (s, label) => `<form method="post" action="/viewings/${v.id}/status" class="inline"><input type="hidden" name="_csrf" value="${csrfToken}"><input type="hidden" name="status" value="${s}"><button class="btn btn-ghost btn-sm">${label}</button></form>`; %>
+              <% if (v.status === 'requested') { %><%- btn('confirmed', 'Confirm') %><%- btn('declined', 'Decline') %><% } else { %><%- btn('cancelled', 'Cancel') %><% } %>
+            </td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table></div>
+    <% } else { %><p class="muted">No upcoming viewing requests.</p><% } %>
+    <p><a href="/messages">You have <%= enquiries %> enquiry conversation<%= enquiries === 1 ? '' : 's' %> →</a></p>
+  <% } %>
+
+  <h2 class="h3">My viewings</h2>
+  <% if (myViewings.length) { %>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>When</th><th>Property</th><th>Landlord</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      <% myViewings.forEach(v => { %>
+        <tr>
+          <td><%= v.preferred_date %><br><span class="small muted"><%= v.preferred_time %></span></td>
+          <td><a href="/listings/<%= v.listing_id %>"><%= v.listing_title %></a><br><span class="small muted"><%= v.address %>, <%= v.neighbourhood %><%= v.gps_address ? ` · ${v.gps_address}` : '' %></span></td>
+          <td><%= v.landlord_name %><% if (v.status === 'confirmed') { %><br><a class="small" href="tel:+<%= v.landlord_phone %>"><%= prettyPhone(v.landlord_phone) %></a><% } %></td>
+          <td><span class="badge <%= v.status === 'confirmed' ? 'badge-green' : v.status === 'requested' ? 'badge-gold' : 'badge-grey' %>"><%= v.status %></span></td>
+          <td><% if (['requested','confirmed'].includes(v.status)) { %>
+            <form method="post" action="/viewings/<%= v.id %>/status" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="status" value="cancelled"><button class="btn btn-ghost btn-sm">Cancel</button></form>
+          <% } %></td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+  <% } else { %><p class="muted">You haven't requested any viewings yet.</p><% } %>
+
+  <h2 class="h3">Saved homes</h2>
+  <% if (saved.length) { %>
+    <div class="grid"><% saved.forEach(l => { %><%- include('partials/card', { l }) %><% }) %></div>
+  <% } else { %><p class="muted">Tap “♡ Save” on any listing to keep it here.</p><% } %>
+</section>
+<%- include('partials/foot') %>
