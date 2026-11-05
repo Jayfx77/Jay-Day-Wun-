@@ -48,7 +48,27 @@ npm test
 ```
 Demo logins after seeding: `admin@demo.local`, `ama@demo.local` (landlord), `esi@demo.local` (tenant).
 
-## Deploy to production
+## Deploy on Render
+The repo includes a Render blueprint (`render.yaml`). It sets up a Node web service in Frankfurt (the closest Render region to Ghana), with a 5 GB persistent disk at `/var/data` for the database and photos, and health checks on `/healthz`.
+
+1. Sign in at [render.com](https://render.com) with GitHub, and allow Render to access this repository.
+2. In the Render dashboard, choose **New → Blueprint** and pick this repository. Render reads `render.yaml`.
+3. Fill in the values Render asks for:
+   - `ADMIN_EMAIL`, `ADMIN_PASSWORD` (10+ characters), `ADMIN_NAME`, `ADMIN_PHONE`: your admin login. The account is created on the first start.
+   - `SUPPORT_EMAIL`, `SUPPORT_PHONE`: shown to users.
+   - `SMS_PROVIDER`: `arkesel` or `hubtel`, plus that provider's keys. Leave the other provider's keys empty. Use `log` only for a trial run: texts are then printed in Render's **Logs** tab instead of being sent.
+4. Click **Apply**. The first deploy takes a few minutes. The site will be at `https://ofie-accra.onrender.com`, or similar if that name is taken.
+5. Log in with your admin email and check `/admin`.
+
+**Cost:** a persistent disk needs a paid instance (the *Starter* plan) plus disk storage. Check Render's pricing page for current prices. Without a disk, every deploy or restart would wipe the database and photos.
+
+**Your own domain:** in the service's **Settings → Custom Domains**, add your domain and create the DNS record Render shows you. HTTPS is set up automatically. Then set `BASE_URL` to `https://your-domain` so links in texts and emails use it.
+
+**Backups:** Render takes daily snapshots of persistent disks, which you can restore from the **Disks** page. For an extra copy, open the service's **Shell** and run `sqlite3 /var/data/ofie.db ".backup /var/data/backup.db"`, then download it, or schedule your own off-site copies.
+
+Each push to `main` redeploys the site automatically. Database updates run on startup.
+
+## Deploy to production (other hosts)
 1. Copy `.env.example` and set your values, including `ADMIN_EMAIL` and `ADMIN_PASSWORD`. The admin account is created on first start.
 2. Put the database and uploads on **persistent storage** (`DB_FILE`, `UPLOAD_DIR`, `PRIVATE_DIR`).
 3. Run it behind HTTPS. With `NODE_ENV=production`, cookies are marked `secure`.
