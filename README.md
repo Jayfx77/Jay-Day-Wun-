@@ -102,6 +102,8 @@ npm run create-admin -- "Full Name" admin@example.com 0241234567 'long-password'
 ```
 
 ## SMS setup
+All texts are sent using plain SMS characters only, which is the cheaper rate (160 characters per SMS instead of about 70). Amounts appear as "GHS 3,500" rather than "GH₵ 3,500". Curly quotes, dashes and "…" become plain versions, Twi letters such as ɛ and ɔ become e and o, and emoji are left out. Emails and the website still show GH₵.
+
 Texts go through **Arkesel** or **Hubtel**, two Ghanaian SMS providers.
 1. Open an account with one of them and register a sender ID. `OfieAccra` is the default; sender IDs can be up to 11 characters, and Ghanaian networks must approve them first.
 2. Set `SMS_PROVIDER=arkesel` and `ARKESEL_API_KEY`, or `SMS_PROVIDER=hubtel` with `HUBTEL_CLIENT_ID` and `HUBTEL_CLIENT_SECRET`.

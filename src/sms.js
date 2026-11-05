@@ -1,6 +1,7 @@
 // SMS delivery with pluggable Ghanaian providers. Every message is recorded in sms_log.
 // Sending never blocks or breaks a web request: failures are logged and stored with status 'failed'.
 const config = require('./config');
+const { toGsm } = require('./gsm');
 
 const providers = {
   async arkesel({ to, body }) {
@@ -46,7 +47,9 @@ function createSms(db) {
   // Returns a promise (useful in tests); callers in request handlers don't await it.
   function send({ userId = null, phone, kind, ref = null, body }) {
     if (!phone) return Promise.resolve();
-    const text = body.length > 459 ? `${body.slice(0, 456)}...` : body; // max 3 SMS segments
+    // Plain SMS characters only (GH₵ -> GHS etc.), so texts are billed at the cheaper GSM rate.
+    const gsm = toGsm(body);
+    const text = gsm.length > 459 ? `${gsm.slice(0, 456)}...` : gsm; // max 3 SMS segments
     const id = insert.run(userId, phone, kind, ref == null ? null : String(ref), text).lastInsertRowid;
     const p = provider({ to: phone, body: text })
       .then(() => finish.run(config.sms.provider === 'log' ? 'logged' : 'sent', null, id))
