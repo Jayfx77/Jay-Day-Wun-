@@ -183,6 +183,37 @@ const MIGRATIONS = [
   );
   CREATE INDEX idx_email_user ON email_log(user_id, kind, ref, created_at);
   `,
+  `
+  -- When a listing last became publicly visible (new, approved, or relisted). Maintained by triggers.
+  ALTER TABLE listings ADD COLUMN published_at TEXT;
+  UPDATE listings SET published_at = created_at WHERE status = 'active';
+  CREATE INDEX idx_listings_published ON listings(status, published_at);
+  CREATE TRIGGER listings_published_insert AFTER INSERT ON listings WHEN NEW.status = 'active'
+  BEGIN UPDATE listings SET published_at = datetime('now') WHERE id = NEW.id; END;
+  CREATE TRIGGER listings_published_update AFTER UPDATE OF status ON listings
+    WHEN NEW.status = 'active' AND OLD.status != 'active'
+  BEGIN UPDATE listings SET published_at = datetime('now') WHERE id = NEW.id; END;
+
+  CREATE TABLE saved_searches (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    query TEXT NOT NULL,              -- normalised JSON of the search filters
+    frequency TEXT NOT NULL DEFAULT 'instant' CHECK (frequency IN ('instant','daily','off')),
+    token TEXT NOT NULL UNIQUE,       -- for the "stop these alerts" link in emails
+    checked_until TEXT NOT NULL DEFAULT (datetime('now')),  -- listings published after this are new
+    last_sent_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (user_id, query)
+  );
+
+  -- Listings already sent for a saved search, so a relisted home isn't sent twice.
+  CREATE TABLE saved_search_hits (
+    saved_search_id INTEGER NOT NULL REFERENCES saved_searches(id) ON DELETE CASCADE,
+    listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (saved_search_id, listing_id)
+  );
+  `,
 ];
 
 function migrate(db) {

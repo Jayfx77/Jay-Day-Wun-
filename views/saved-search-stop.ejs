@@ -1,0 +1,12 @@
+<%- include('partials/head') %>
+<section class="wrap narrow-sm section center">
+  <h1 class="h2">Search alerts</h1>
+  <% if (done) { %>
+    <p class="lead">Alerts are off for <strong><%= description %></strong>.</p>
+    <p class="small muted">The search is still saved. You can turn alerts back on, or delete it, from your <a href="/dashboard#saved-searches">dashboard</a>.</p>
+  <% } else { %>
+    <p class="lead">Stop emails about new homes for <strong><%= description %></strong>?</p>
+    <form method="post" action="/saved-searches/stop"><input type="hidden" name="token" value="<%= token %>"><button class="btn">Stop these alerts</button></form>
+  <% } %>
+</section>
+<%- include('partials/foot') %>

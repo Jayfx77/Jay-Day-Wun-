@@ -38,7 +38,27 @@
       <a class="small" href="/listings">Clear all</a>
     </form>
     <div>
-      <p class="muted"><%= result.total %> home<%= result.total === 1 ? '' : 's' %> found</p>
+      <div class="save-search">
+        <div>
+          <p class="muted" style="margin:0"><%= result.total %> home<%= result.total === 1 ? '' : 's' %> found</p>
+          <strong class="small"><%= searchDescription %></strong>
+        </div>
+        <% if (alreadySaved) { %>
+          <a class="btn btn-ghost btn-sm" href="/dashboard#saved-searches">🔔 Saved · manage</a>
+        <% } else if (user) { %>
+          <form method="post" action="/saved-searches" class="save-search-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <% Object.entries(filters).forEach(([k, v]) => { [].concat(v).forEach(x => { %><input type="hidden" name="<%= k %>" value="<%= x %>"><% }) }) %>
+            <select name="frequency" aria-label="How often">
+              <option value="instant">Email me new matches right away</option>
+              <option value="daily">Email me a daily summary</option>
+            </select>
+            <button class="btn btn-sm">🔔 Save search</button>
+          </form>
+        <% } else { %>
+          <a class="btn btn-ghost btn-sm" href="/login?next=<%= encodeURIComponent('/listings?' + new URLSearchParams(Object.entries(query).flatMap(([k, v]) => [].concat(v).map(x => [k, x]))).toString()) %>">🔔 Log in to get alerts for this search</a>
+        <% } %>
+      </div>
       <% if (result.rows.length) { %>
         <div class="grid grid-3"><% result.rows.forEach(l => { %><%- include('partials/card', { l }) %><% }) %></div>
       <% } else { %>

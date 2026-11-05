@@ -21,9 +21,13 @@ function listingCards(db) {
     (SELECT COUNT(*) FROM listing_photos p WHERE p.listing_id = l.id) photo_count`;
 
   // Builds a parameterised search over active listings from untrusted query-string filters.
-  function search(q = {}) {
+  // opts (trusted, internal only): publishedAfter, publishedUntil, excludeLandlord.
+  function search(q = {}, opts = {}) {
     const where = ["l.status = 'active'", 'u.suspended = 0'];
     const params = {};
+    if (opts.publishedAfter) { where.push('l.published_at > @publishedAfter'); params.publishedAfter = opts.publishedAfter; }
+    if (opts.publishedUntil) { where.push('l.published_at <= @publishedUntil'); params.publishedUntil = opts.publishedUntil; }
+    if (opts.excludeLandlord) { where.push('l.landlord_id != @excludeLandlord'); params.excludeLandlord = opts.excludeLandlord; }
     if (q.area) { where.push('l.neighbourhood = @area'); params.area = String(q.area); }
     if (q.type && PROPERTY_TYPES[q.type]) { where.push('l.property_type = @type'); params.type = q.type; }
     if (q.furnishing && FURNISHING[q.furnishing]) { where.push('l.furnishing = @furn'); params.furn = q.furnishing; }

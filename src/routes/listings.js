@@ -6,6 +6,7 @@ const { requirePhoneVerified } = require('../phoneVerification');
 const { validGps } = require('../helpers');
 const uploads = require('../uploads');
 const { listingCards } = require('../listingQueries');
+const { normalise, describe } = require('../savedSearches');
 
 const clampInt = (v, lo, hi) => {
   const n = parseInt(v, 10);
@@ -86,7 +87,12 @@ module.exports = (db, { notify }) => {
     const favs = req.user
       ? new Set(db.prepare('SELECT listing_id FROM favorites WHERE user_id = ?').all(req.user.id).map((f) => f.listing_id))
       : new Set();
-    res.render('listings', { title: 'Apartments for rent in Accra', result, favs });
+    const filters = normalise(req.query);
+    const alreadySaved = req.user
+      && !!db.prepare('SELECT 1 FROM saved_searches WHERE user_id = ? AND query = ?').get(req.user.id, JSON.stringify(filters));
+    res.render('listings', {
+      title: 'Apartments for rent in Accra', result, favs, filters, searchDescription: describe(filters), alreadySaved,
+    });
   });
 
   // ---------- Create ----------

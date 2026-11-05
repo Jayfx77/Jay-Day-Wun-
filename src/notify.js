@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const config = require('./config');
 const { describeDevice, accraTime } = require('./helpers');
 const {
-  passwordChangedEmail, newMessageEmail, viewingRequestedEmail, viewingStatusEmail, listingDecisionEmail, verificationEmail,
+  savedSearchEmail, passwordChangedEmail, newMessageEmail, viewingRequestedEmail, viewingStatusEmail, listingDecisionEmail, verificationEmail,
 } = require('./emails');
 
 const shorten = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
@@ -69,6 +69,17 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
   }
 
   return {
+    // New listings matching a saved search. Respects the user's email setting.
+    savedSearchMatches({ search, description, listings, total, searchPath }) {
+      email(search.user_id, 'saved_search', search.id, (u, unsub) => savedSearchEmail({
+        recipientName: u.name.split(' ')[0], description, listings, total, unsubscribeUrl: unsub,
+        urls: {
+          search: url(searchPath), stop: url(`/saved-searches/stop?token=${search.token}`),
+          listing: (id) => url(`/listings/${id}`), photo: (f) => url(`/uploads/${f}`),
+        },
+      }));
+    },
+
     // Security notice by SMS and email, sent even if the user turned alerts off.
     // method: 'reset_code' | 'reset_link' | 'account'.
     passwordChanged({ userId, method, userAgent, ip }) {
