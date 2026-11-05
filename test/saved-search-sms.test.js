@@ -88,8 +88,9 @@ test('a search saved with SMS texts the user about a new match, and emails too',
   assert.deepEqual([res.emailed, res.texted], [1, 1]);
   const [t] = texts();
   assert.equal(t.phone, '233271000004');
-  assert.match(t.body, new RegExp(`^Ofie Accra: New home for your search "2\\+ bed homes in Osu": GH₵ 3,500/mo, 2-bed in Osu\\. https?://\\S+/listings/${id} Manage alerts: https?://\\S+/dashboard$`));
+  assert.match(t.body, new RegExp(`^Ofie Accra: New home for your search "2\\+ bed homes in Osu": GHS 3,500/mo, 2-bed in Osu\\. https?://\\S+/listings/${id} Manage alerts: https?://\\S+/dashboard$`));
   assert.equal(alertsTo('kojo@test.gh').length, 1);
+  assert.match(alertsTo('kojo@test.gh')[0].text, /GH₵ 3,500\/month/, 'emails keep the cedi sign');
 });
 
 test('several new homes are summarised in one text with the cheapest rent and a link to all of them', async () => {
@@ -98,7 +99,7 @@ test('several new homes are summarised in one text with the cheapest rent and a 
   addListing({ title: 'B', rent: 2800 });
   addListing({ title: 'C', rent: 4100 });
   await run(later(0.002));
-  assert.match(texts().at(-1).body, /^Ofie Accra: 3 new homes for your search "2\+ bed homes in Osu", from GH₵ 2,800\/mo\. See them: https?:\/\/\S+\/listings\?area=Osu&beds=2 Manage alerts: /);
+  assert.match(texts().at(-1).body, /^Ofie Accra: 3 new homes for your search "2\+ bed homes in Osu", from GHS 2,800\/mo\. See them: https?:\/\/\S+\/listings\?area=Osu&beds=2 Manage alerts: /);
 });
 
 test('SMS-only searches send no email', async () => {

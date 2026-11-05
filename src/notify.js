@@ -8,6 +8,8 @@ const {
 } = require('./emails');
 
 const shorten = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+// Amounts in texts: "GHS 3,500" (the cedi sign ₵ would make SMS cost more).
+const ghs = (n) => cedis(n).replace('GH₵', 'GHS');
 
 function createNotifier(db, sms, mailer = { enabled: false }) {
   const site = config.siteName;
@@ -77,8 +79,8 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
         const first = listings[0];
         const what = `${first.bedrooms ? `${first.bedrooms}-bed` : 'Single room'} in ${first.neighbourhood}`;
         const body = total === 1
-          ? `${site}: New home for your search "${shorten(description, 45)}": ${cedis(first.rent_ghs)}/mo, ${what}. ${url(`/listings/${first.id}`)}`
-          : `${site}: ${total} new homes for your search "${shorten(description, 45)}", from ${cedis(Math.min(...listings.map((l) => l.rent_ghs)))}/mo. See them: ${url(searchPath)}`;
+          ? `${site}: New home for your search "${shorten(description, 45)}": ${ghs(first.rent_ghs)}/mo, ${what}. ${url(`/listings/${first.id}`)}`
+          : `${site}: ${total} new homes for your search "${shorten(description, 45)}", from ${ghs(Math.min(...listings.map((l) => l.rent_ghs)))}/mo. See them: ${url(searchPath)}`;
         sms.send({ userId: u.id, phone: u.phone, kind: 'saved_search', ref: search.id, body: `${body} Manage alerts: ${url('/dashboard')}` });
       }
       if (!channels.email) return;
