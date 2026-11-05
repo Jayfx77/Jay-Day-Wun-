@@ -1,13 +1,44 @@
-// User-facing SMS alerts. Each function looks up what it needs, respects the user's
-// sms_alerts preference, and fires off the text without blocking the request.
+// User-facing alerts (SMS, plus email for new messages). Each function respects the user's
+// alert preferences and sends without blocking the request.
+const crypto = require('crypto');
 const config = require('./config');
+const { newMessageEmail } = require('./emails');
 
 const shorten = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-function createNotifier(db, sms) {
+function createNotifier(db, sms, mailer = { enabled: false }) {
   const site = config.siteName;
   const url = (p) => `${config.baseUrl}${p}`;
-  const getUser = db.prepare('SELECT id, name, phone, sms_alerts, suspended FROM users WHERE id = ?');
+  const getUser = db.prepare('SELECT id, name, email, phone, sms_alerts, email_alerts, unsubscribe_token, suspended FROM users WHERE id = ?');
+  const recentlyEmailed = db.prepare(`SELECT 1 FROM email_log WHERE user_id = ? AND kind = ? AND ref = ?
+    AND status != 'failed' AND created_at > datetime('now', ?)`);
+
+  function unsubscribeUrl(u) {
+    let token = u.unsubscribe_token;
+    if (!token) {
+      token = crypto.randomBytes(24).toString('base64url');
+      db.prepare('UPDATE users SET unsubscribe_token = ? WHERE id = ?').run(token, u.id);
+    }
+    return url(`/unsubscribe?token=${token}`);
+  }
+
+  function emailNewMessage({ conversationId, recipientId, senderName, listingTitle, body }) {
+    if (!mailer.enabled) return;
+    const u = getUser.get(recipientId);
+    if (!u || !u.email_alerts || u.suspended) return;
+    // One email per conversation per cooldown window; the email links to the full chat.
+    if (recentlyEmailed.get(u.id, 'message', String(conversationId), `-${config.emailMessageCooldownMinutes} minutes`)) return;
+    const unsub = unsubscribeUrl(u);
+    const email = newMessageEmail({
+      recipientName: u.name.split(' ')[0], senderName, listingTitle, body,
+      conversationUrl: url(`/messages/${conversationId}`), unsubscribeUrl: unsub,
+    });
+    mailer.send({
+      ...email, to: u.email, userId: u.id, kind: 'message', ref: conversationId,
+      // RFC 8058 one-click unsubscribe (Gmail/Yahoo show an "Unsubscribe" button).
+      headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+    });
+  }
   const recentlyTexted = db.prepare(`SELECT 1 FROM sms_log WHERE user_id = ? AND kind = ? AND ref = ?
     AND status != 'failed' AND created_at > datetime('now', ?)`);
 
@@ -19,6 +50,7 @@ function createNotifier(db, sms) {
 
   return {
     newMessage({ conversationId, recipientId, senderName, listingTitle, body }) {
+      emailNewMessage({ conversationId, recipientId, senderName, listingTitle, body });
       // One text per conversation per cooldown window, so a busy chat doesn't flood the phone.
       const window = `-${config.sms.messageCooldownMinutes} minutes`;
       if (recentlyTexted.get(recipientId, 'message', String(conversationId), window)) return;

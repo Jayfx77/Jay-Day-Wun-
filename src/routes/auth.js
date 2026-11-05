@@ -140,6 +140,7 @@ module.exports = (db, { sms, mailer, phone: phoneCheck }) => {
         });
         if (mailer.enabled) {
           mailer.send({
+            userId: user.id, kind: 'reset',
             to: user.email,
             subject: `Reset your ${config.siteName} password`,
             text: `Hello ${user.name},\n\nSomeone (hopefully you) asked to reset your ${config.siteName} password.\n\n`

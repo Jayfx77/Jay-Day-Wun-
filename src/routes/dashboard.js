@@ -64,9 +64,10 @@ module.exports = (db, { notify, phone: phoneCheck }) => {
     }
     if (errors.length) return res.status(400).render('account', { title: 'My account', errors, welcome: false });
     const phoneChanged = phone !== req.user.phone && req.user.role !== 'admin';
-    db.prepare(`UPDATE users SET name = ?, phone = ?, whatsapp = ?, sms_alerts = ?,
+    db.prepare(`UPDATE users SET name = ?, phone = ?, whatsapp = ?, sms_alerts = ?, email_alerts = ?,
       phone_verified = CASE WHEN ? THEN 0 ELSE phone_verified END WHERE id = ?`)
-      .run(name, phone, req.body.whatsapp === '1' ? 1 : 0, req.body.sms_alerts === '1' ? 1 : 0, phoneChanged ? 1 : 0, req.user.id);
+      .run(name, phone, req.body.whatsapp === '1' ? 1 : 0, req.body.sms_alerts === '1' ? 1 : 0,
+        req.body.email_alerts === '1' ? 1 : 0, phoneChanged ? 1 : 0, req.user.id);
     if (newPw) {
       db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(newPw), req.user.id);
       // Sign out other devices.

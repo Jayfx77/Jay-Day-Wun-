@@ -93,6 +93,13 @@
     </table></div>
   <% } %>
 
+  <h2 class="h3">Email (last 24 hours)</h2>
+  <% if (!emailEnabled) { %>
+    <p><span class="badge badge-gold">Email is off</span> Set SMTP_HOST (and related settings) to send message alerts and reset links by email.</p>
+  <% } else { %>
+    <p><%= emailStats.sent || 0 %> sent · <%= emailStats.failed || 0 %> failed<% if (lastEmailError) { %> · last error <%= timeAgo(lastEmailError.created_at) %>: <span class="small"><%= lastEmailError.error %></span><% } %></p>
+  <% } %>
+
   <h2 class="h3">Users</h2>
   <form method="get" action="/admin" class="row-btns"><input name="q" value="<%= q %>" placeholder="Search name, email or phone"><button class="btn btn-sm">Search</button></form>
   <div class="table-wrap"><table class="table">

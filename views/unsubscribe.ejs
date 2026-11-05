@@ -1,0 +1,15 @@
+<%- include('partials/head') %>
+<section class="wrap narrow-sm section center">
+  <h1 class="h2">Message emails</h1>
+  <% if (done) { %>
+    <p class="lead">You won't get emails about new messages at <strong><%= email %></strong> any more.</p>
+    <p class="small muted">You'll still receive password-reset emails and, if you've turned them on, SMS alerts.</p>
+    <form method="post" action="/unsubscribe"><input type="hidden" name="token" value="<%= token %>"><input type="hidden" name="action" value="resubscribe"><button class="btn btn-ghost">Turn message emails back on</button></form>
+  <% } else { %>
+    <% if (locals.resubscribed) { %><div class="flash" role="status">Message emails are back on.</div><% } %>
+    <p class="lead">Stop emails about new messages to <strong><%= email %></strong>?</p>
+    <form method="post" action="/unsubscribe"><input type="hidden" name="token" value="<%= token %>"><button class="btn">Unsubscribe</button></form>
+  <% } %>
+  <p class="small"><a href="/account">Manage all notification settings</a></p>
+</section>
+<%- include('partials/foot') %>

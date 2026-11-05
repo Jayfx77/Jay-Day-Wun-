@@ -26,6 +26,10 @@ Ofie Accra is a web platform where tenants in Accra find homes and deal **direct
 - Each phone number can be verified on only one account, which makes fake or duplicate landlord accounts harder. Changing your number means verifying the new one.
 - Users who signed up before this feature was added are asked to verify the next time they log in. Admins don't need to.
 
+**Email notifications**
+- When email is set up (see *Email setup*), users get an email for each new message, with a preview and a "Reply" button. Follow-ups in the same chat within 15 minutes don't trigger another email.
+- Every email has an unsubscribe link, and Gmail and Yahoo show their own "Unsubscribe" button for it. Users can also switch emails off on their account page. Password-reset emails are always sent.
+
 **Admins** (`/admin`)
 - Approve or reject listings, verify Ghana Cards (stored privately and never public), handle reports, take down listings, and suspend users.
 
@@ -94,6 +98,13 @@ Texts go through **Arkesel** or **Hubtel**, two Ghanaian SMS providers.
 3. Send yourself a test (for example, use "Forgot password" on your own account), then check `/admin` → *SMS alerts* for anything that failed.
 
 Without a provider, `SMS_PROVIDER=log` prints texts to the server log instead of sending them. That's fine for local testing, but in production nobody could reset a password.
+
+## Email setup
+Email is optional. Without it, the site uses SMS only. To turn it on, set these in Render's **Environment** tab (or in `.env`):
+- `SMTP_HOST`, `SMTP_PORT` (usually `587`), `SMTP_USER`, `SMTP_PASS`: from any SMTP email service, such as Brevo, Mailgun, Amazon SES, Postmark, or Zoho or Google Workspace.
+- `SMTP_FROM`: the sender address, for example `no-reply@yourdomain.com`. Use an address on your own domain, and add the SPF and DKIM records your email service gives you so emails don't go to spam (see [docs/custom-domain.md](docs/custom-domain.md#optional-email-on-your-domain)).
+
+Then check `/admin` → *Email* after sending yourself a message from a second account.
 
 ## Before public launch: checklist
 - [ ] Have a Ghanaian lawyer review `/terms` (Rent Act, Act 220; Data Protection Act, Act 843). Register with the Data Protection Commission, since the platform stores Ghana Card data.

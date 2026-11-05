@@ -35,7 +35,10 @@ module.exports = (db, { notify }) => {
       FROM sms_log WHERE created_at > datetime('now', '-1 day')`).get();
     const smsFailures = db.prepare(`SELECT s.created_at, s.phone, s.kind, s.error, u.name FROM sms_log s
       LEFT JOIN users u ON u.id = s.user_id WHERE s.status = 'failed' ORDER BY s.id DESC LIMIT 10`).all();
-    res.render('admin', { title: 'Admin', stats, smsStats, smsFailures, pendingListings, pendingVerifications, reports, users, q });
+    const emailStats = db.prepare(`SELECT SUM(status = 'sent') sent, SUM(status = 'failed') failed
+      FROM email_log WHERE created_at > datetime('now', '-1 day')`).get();
+    const lastEmailError = db.prepare("SELECT error, created_at FROM email_log WHERE status = 'failed' ORDER BY id DESC LIMIT 1").get();
+    res.render('admin', { title: 'Admin', stats, smsStats, smsFailures, emailStats, lastEmailError, pendingListings, pendingVerifications, reports, users, q });
   });
 
   r.post('/listings/:id/moderate', verifyCsrf, (req, res) => {
