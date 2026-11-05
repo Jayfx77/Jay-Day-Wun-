@@ -45,6 +45,13 @@ const accraTime = (d = new Date()) => `${d.toLocaleDateString('en-GB', {
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
 }).replace(',', '')} at ${d.toISOString().slice(11, 16)} GMT`;
 
+// "Sun 8 Nov, 12-4pm" for SMS.
+function shortViewingTime(date, time) {
+  const { TIME_WINDOWS } = require('./constants');
+  const d = new Date(`${date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  return `${d.replace(',', '')}, ${(TIME_WINDOWS[time] || {}).short || time}`;
+}
+
 const totalUpfront = (l) => l.rent_ghs * l.advance_months;
 
 function locals(app) {
@@ -59,4 +66,4 @@ function locals(app) {
   });
 }
 
-module.exports = { describeDevice, accraTime, cedis, timeAgo, normalisePhone, prettyPhone, validGhanaCard, validGps, totalUpfront, locals };
+module.exports = { shortViewingTime, describeDevice, accraTime, cedis, timeAgo, normalisePhone, prettyPhone, validGhanaCard, validGps, totalUpfront, locals };
