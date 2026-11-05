@@ -49,11 +49,7 @@ Notification settings: ${config.baseUrl}/account`;
 }
 
 // ---------- Viewing emails ----------
-const TIME_WINDOWS = {
-  morning: { label: 'Morning (8am – 12pm)', start: 8, end: 12 },
-  afternoon: { label: 'Afternoon (12pm – 4pm)', start: 12, end: 16 },
-  evening: { label: 'Evening (4pm – 7pm)', start: 16, end: 19 },
-};
+const { TIME_WINDOWS } = require('./constants');
 const prettyDate = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', {
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
 }).replace(',', ''); // "Friday 6 November 2026"

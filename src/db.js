@@ -219,6 +219,12 @@ const MIGRATIONS = [
   ALTER TABLE saved_searches ADD COLUMN email INTEGER NOT NULL DEFAULT 1;
   ALTER TABLE saved_searches ADD COLUMN sms INTEGER NOT NULL DEFAULT 0;
   `,
+  `
+  -- When each SMS reminder for a confirmed viewing was sent (or skipped), so each goes out once.
+  ALTER TABLE viewings ADD COLUMN reminded_day_before TEXT;
+  ALTER TABLE viewings ADD COLUMN reminded_day_of TEXT;
+  CREATE INDEX idx_viewings_reminders ON viewings(status, preferred_date);
+  `,
 ];
 
 function migrate(db) {

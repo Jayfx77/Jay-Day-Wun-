@@ -2,7 +2,7 @@
 // alert preferences and sends without blocking the request.
 const crypto = require('crypto');
 const config = require('./config');
-const { describeDevice, accraTime, cedis } = require('./helpers');
+const { describeDevice, accraTime, cedis, shortViewingTime, prettyPhone } = require('./helpers');
 const {
   savedSearchEmail, passwordChangedEmail, newMessageEmail, viewingRequestedEmail, viewingStatusEmail, listingDecisionEmail, verificationEmail,
 } = require('./emails');
@@ -123,6 +123,21 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
       email(v.landlord_id, 'viewing', v.id, (u, unsub) => viewingRequestedEmail({
         v, recipientName: u.name.split(' ')[0], dashboardUrl: url('/dashboard'), unsubscribeUrl: unsub,
       }));
+    },
+
+    // SMS reminder for a confirmed viewing to the tenant and landlord. when: 'tomorrow' | 'today'.
+    viewingReminder({ viewingId, when }) {
+      const v = getViewing.get(viewingId);
+      if (!v) return;
+      const at = `${when} (${shortViewingTime(v.preferred_date, v.preferred_time)})`;
+      const place = [v.address, v.neighbourhood].filter(Boolean).join(', ') + (v.gps_address ? ` (${v.gps_address})` : '');
+      const title = shorten(v.listing_title, 35);
+      alert(v.tenant_id, 'viewing_reminder', v.id,
+        `${site} reminder: viewing ${at} at "${title}", ${shorten(place, 70)}. Landlord: ${shorten(v.landlord_name, 25)} ${prettyPhone(v.landlord_phone)}.`
+        + (when === 'today' ? ' Call ahead to agree the exact time. Never pay before viewing.' : '')
+        + ` Can't make it? Cancel: ${url('/dashboard')}`);
+      alert(v.landlord_id, 'viewing_reminder', v.id,
+        `${site} reminder: ${shorten(v.tenant_name, 25)} (${prettyPhone(v.tenant_phone)}) is viewing "${title}" ${at}. Need to cancel? ${url('/dashboard')}`);
     },
 
     // byUserId changed the viewing to `status`; tell the other party.

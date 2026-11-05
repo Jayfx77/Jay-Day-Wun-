@@ -52,4 +52,12 @@ const REPORT_REASONS = {
   other: 'Other',
 };
 
-module.exports = { NEIGHBOURHOODS, PROPERTY_TYPES, FURNISHING, AMENITIES, REPORT_REASONS };
+// Viewing time windows (Ghana time = GMT all year). `short` is for SMS, so plain ASCII only
+// (characters like en dashes force the more expensive Unicode SMS encoding).
+const TIME_WINDOWS = {
+  morning: { label: 'Morning (8am – 12pm)', short: '8am-12pm', start: 8, end: 12 },
+  afternoon: { label: 'Afternoon (12pm – 4pm)', short: '12-4pm', start: 12, end: 16 },
+  evening: { label: 'Evening (4pm – 7pm)', short: '4-7pm', start: 16, end: 19 },
+};
+
+module.exports = { TIME_WINDOWS, NEIGHBOURHOODS, PROPERTY_TYPES, FURNISHING, AMENITIES, REPORT_REASONS };

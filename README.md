@@ -26,6 +26,10 @@ Ofie Accra is a web platform where tenants in Accra find homes and deal **direct
 - Each phone number can be verified on only one account, which makes fake or duplicate landlord accounts harder. Changing your number means verifying the new one.
 - Users who signed up before this feature was added are asked to verify the next time they log in. Admins don't need to.
 
+**Viewing reminders by SMS**
+- For every confirmed viewing, the tenant and the landlord each get a reminder text **the evening before** (from 6pm) and **on the day**, 2 hours before the time window starts (not before 7am). The tenant's text has the date, time window, address, GhanaPost GPS address and the landlord's name and number; the landlord's has the tenant's name and number. Both include a link to cancel.
+- Each reminder is sent once. None are sent for viewings that were cancelled or declined, for listings that are no longer live, or after the time window has passed. Reminders follow each user's SMS setting.
+
 **Email notifications**
 - When email is set up (see *Email setup*), users get an email for each new message, with a preview and a "Reply" button. Follow-ups in the same chat within 15 minutes don't trigger another email.
 - Viewing emails: landlords get one when a tenant asks to view, showing the date, time window, tenant's phone number and note. When a viewing is confirmed, the tenant gets the address, GhanaPost GPS address, the landlord's phone number and a **calendar invite**. Declined or cancelled viewings email the other person, and tenants get a link to similar homes.
