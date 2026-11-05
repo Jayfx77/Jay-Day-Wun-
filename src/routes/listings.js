@@ -43,7 +43,7 @@ function readListingForm(body) {
   return { v, errors };
 }
 
-module.exports = (db) => {
+module.exports = (db, { notify }) => {
   const r = express.Router();
   const cards = listingCards(db);
 
@@ -254,6 +254,9 @@ module.exports = (db) => {
       db.prepare("UPDATE conversations SET updated_at = datetime('now') WHERE id = ?").run(conv.id);
       return conv.id;
     })();
+    notify.newMessage({
+      conversationId: convId, recipientId: listing.landlord_id, senderName: req.user.name, listingTitle: listing.title, body,
+    });
     res.redirect(`/messages/${convId}`);
   });
 
@@ -272,6 +275,7 @@ module.exports = (db) => {
     if (open) return res.redirect(`/listings/${listing.id}?ok=${encodeURIComponent('You already have a viewing request for this property.')}`);
     db.prepare('INSERT INTO viewings (listing_id, tenant_id, preferred_date, preferred_time, note) VALUES (?, ?, ?, ?, ?)')
       .run(listing.id, req.user.id, date, time, String(req.body.note || '').trim().slice(0, 500) || null);
+    notify.viewingRequested({ landlordId: listing.landlord_id, tenantName: req.user.name, listingTitle: listing.title, date, time });
     res.redirect(`/listings/${listing.id}?ok=${encodeURIComponent('Viewing requested. The landlord will confirm on your dashboard.')}`);
   });
 

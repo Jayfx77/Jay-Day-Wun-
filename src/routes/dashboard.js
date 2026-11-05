@@ -4,7 +4,7 @@ const { normalisePhone, validGhanaCard } = require('../helpers');
 const uploads = require('../uploads');
 const { listingCards } = require('../listingQueries');
 
-module.exports = (db) => {
+module.exports = (db, { notify }) => {
   const r = express.Router();
   const cards = listingCards(db);
 
@@ -29,14 +29,20 @@ module.exports = (db) => {
 
   // Landlord confirms/declines; tenant cancels.
   r.post('/viewings/:id/status', requireUser, verifyCsrf, (req, res) => {
-    const v = db.prepare(`SELECT v.*, l.landlord_id FROM viewings v JOIN listings l ON l.id = v.listing_id WHERE v.id = ?`).get(req.params.id);
+    const v = db.prepare(`SELECT v.*, l.landlord_id, l.title listing_title FROM viewings v JOIN listings l ON l.id = v.listing_id WHERE v.id = ?`).get(req.params.id);
     const to = req.body.status;
     const isLandlord = v && v.landlord_id === req.user.id;
     const isTenant = v && v.tenant_id === req.user.id;
     const ok = v && ((isLandlord && ['confirmed', 'declined'].includes(to) && v.status === 'requested')
       || (isLandlord && to === 'cancelled' && v.status === 'confirmed')
       || (isTenant && to === 'cancelled' && ['requested', 'confirmed'].includes(v.status)));
-    if (ok) db.prepare('UPDATE viewings SET status = ? WHERE id = ?').run(to, v.id);
+    if (ok) {
+      db.prepare('UPDATE viewings SET status = ? WHERE id = ?').run(to, v.id);
+      notify.viewingStatus({
+        toUserId: isLandlord ? v.tenant_id : v.landlord_id, status: to, listingTitle: v.listing_title,
+        date: v.preferred_date, time: v.preferred_time, byName: req.user.name,
+      });
+    }
     res.redirect(`/dashboard?ok=${encodeURIComponent(ok ? 'Viewing updated.' : 'That change is not allowed.')}`);
   });
 
@@ -57,8 +63,8 @@ module.exports = (db) => {
       if (newPw.length < 8) errors.push('New password must be at least 8 characters.');
     }
     if (errors.length) return res.status(400).render('account', { title: 'My account', errors, welcome: false });
-    db.prepare('UPDATE users SET name = ?, phone = ?, whatsapp = ? WHERE id = ?')
-      .run(name, phone, req.body.whatsapp === '1' ? 1 : 0, req.user.id);
+    db.prepare('UPDATE users SET name = ?, phone = ?, whatsapp = ?, sms_alerts = ? WHERE id = ?')
+      .run(name, phone, req.body.whatsapp === '1' ? 1 : 0, req.body.sms_alerts === '1' ? 1 : 0, req.user.id);
     if (newPw) {
       db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(newPw), req.user.id);
       // Sign out other devices.

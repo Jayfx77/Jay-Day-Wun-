@@ -4,7 +4,7 @@ const config = require('../config');
 const { verifyCsrf, requireRole } = require('../auth');
 const { listingCards } = require('../listingQueries');
 
-module.exports = (db) => {
+module.exports = (db, { notify }) => {
   const r = express.Router();
   const cards = listingCards(db);
   r.use(requireRole('admin'));
@@ -30,7 +30,12 @@ module.exports = (db) => {
         (SELECT COUNT(*) FROM listings l WHERE l.landlord_id = users.id) listings
       FROM users WHERE (@q = '' OR name LIKE @like OR email LIKE @like OR phone LIKE @like)
       ORDER BY id DESC LIMIT 50`).all({ q, like: `%${q}%` });
-    res.render('admin', { title: 'Admin', stats, pendingListings, pendingVerifications, reports, users, q });
+    const smsStats = db.prepare(`SELECT
+      SUM(status IN ('sent','logged')) delivered, SUM(status = 'failed') failed, SUM(status = 'queued') queued
+      FROM sms_log WHERE created_at > datetime('now', '-1 day')`).get();
+    const smsFailures = db.prepare(`SELECT s.created_at, s.phone, s.kind, s.error, u.name FROM sms_log s
+      LEFT JOIN users u ON u.id = s.user_id WHERE s.status = 'failed' ORDER BY s.id DESC LIMIT 10`).all();
+    res.render('admin', { title: 'Admin', stats, smsStats, smsFailures, pendingListings, pendingVerifications, reports, users, q });
   });
 
   r.post('/listings/:id/moderate', verifyCsrf, (req, res) => {
@@ -38,8 +43,13 @@ module.exports = (db) => {
     const note = String(req.body.note || '').trim().slice(0, 500) || null;
     const map = { approve: 'active', reject: 'rejected', takedown: 'archived' };
     if (!map[action]) return done(res, 'Unknown action.');
+    const listing = db.prepare('SELECT id, title, landlord_id, status FROM listings WHERE id = ?').get(req.params.id);
+    if (!listing) return done(res, 'Listing not found.');
     db.prepare("UPDATE listings SET status = ?, moderation_note = ?, updated_at = datetime('now') WHERE id = ?")
-      .run(map[action], note, req.params.id);
+      .run(map[action], note, listing.id);
+    if (listing.status !== map[action]) {
+      notify.listingModerated({ landlordId: listing.landlord_id, listingId: listing.id, listingTitle: listing.title, action, note });
+    }
     done(res, `Listing #${req.params.id} ${map[action]}.`);
   });
 
@@ -47,15 +57,17 @@ module.exports = (db) => {
     const action = req.body.action;
     if (!['verify', 'reject'].includes(action)) return done(res, 'Unknown action.');
     const status = action === 'verify' ? 'verified' : 'rejected';
+    const note = String(req.body.note || '').trim().slice(0, 500) || null;
     db.transaction(() => {
       db.prepare('UPDATE users SET verification_status = ?, verification_note = ? WHERE id = ?')
-        .run(status, String(req.body.note || '').trim().slice(0, 500) || null, req.params.id);
+        .run(status, note, req.params.id);
       // Verified landlords' pending listings go live immediately.
       if (status === 'verified') {
         db.prepare("UPDATE listings SET status = 'active', updated_at = datetime('now') WHERE landlord_id = ? AND status = 'pending'")
           .run(req.params.id);
       }
     })();
+    notify.verificationResult({ userId: Number(req.params.id), status, note });
     done(res, `User #${req.params.id} ${status}.`);
   });
 

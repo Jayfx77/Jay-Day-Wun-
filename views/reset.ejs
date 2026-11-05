@@ -1,0 +1,22 @@
+<%- include('partials/head') %>
+<section class="wrap narrow-sm section">
+  <h1 class="h2"><%= token ? 'Choose a new password' : 'Enter your reset code' %></h1>
+  <% if (sent) { %>
+    <div class="flash" role="status">If an account matches <strong><%= identifier %></strong>, we've sent a 6-digit code by SMS to its phone number<%= emailEnabled ? ' and a reset link to its email' : '' %>. It expires in 15 minutes.</div>
+  <% } %>
+  <% if (error) { %><div class="errors" role="alert"><%= error %></div><% } %>
+  <form method="post" action="/reset" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% if (token) { %>
+      <input type="hidden" name="token" value="<%= token %>">
+    <% } else { %>
+      <label>Email or mobile number<input name="identifier" required autocomplete="username" value="<%= identifier %>"></label>
+      <label>6-digit code<input name="code" required inputmode="numeric" autocomplete="one-time-code" pattern="\d{6}" maxlength="6"></label>
+    <% } %>
+    <label>New password<input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+    <label>Confirm new password<input type="password" name="password2" required minlength="8" autocomplete="new-password"></label>
+    <button class="btn btn-block">Set new password</button>
+    <p class="center small">Didn't get a code? <a href="/forgot">Send another</a></p>
+  </form>
+</section>
+<%- include('partials/foot') %>

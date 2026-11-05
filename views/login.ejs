@@ -9,7 +9,7 @@
     <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
     <button class="btn btn-block">Log in</button>
     <p class="center small">New here? <a href="/register<%= next ? `?next=${encodeURIComponent(next)}` : '' %>">Create a free account</a></p>
-    <p class="center small muted">Forgot your password? Email <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a> from your registered address.</p>
+    <p class="center small"><a href="/forgot">Forgot your password?</a></p>
   </form>
 </section>
 <%- include('partials/foot') %>
