@@ -277,7 +277,51 @@ function passwordChangedEmail({ recipientName, method, when, device, ip, urls })
   };
 }
 
+// ---------- Saved search: new matching listings ----------
+function savedSearchEmail({ recipientName, description, listings, total, urls, unsubscribeUrl }) {
+  const n = total;
+  const subject = `${n} new home${n === 1 ? '' : 's'} for "${short(description, 60)}"`;
+  const shown = listings.slice(0, 10);
+  const more = n - shown.length;
+  const line = (l) => `${l.title}\n  ${cedis(l.rent_ghs)}/month · ${l.neighbourhood} · ${l.bedrooms ? `${l.bedrooms} bed` : 'Single room'} · ${l.advance_months} months advance\n  ${urls.listing(l.id)}`;
+  const text = `Hello ${recipientName},
+
+${n === 1 ? 'A new home matches' : `${n} new homes match`} your saved search: ${description}
+
+${shown.map(line).join('\n\n')}
+${more > 0 ? `\n…and ${more} more: ${urls.search}\n` : ''}
+See all matches: ${urls.search}
+
+Stop alerts for this search: ${urls.stop}
+--
+To stop all emails: ${unsubscribeUrl}
+Notification settings: ${config.baseUrl}/account`;
+
+  const item = (l) => `<tr><td style="padding:0 0 16px">
+<a href="${esc(urls.listing(l.id))}" style="text-decoration:none;color:#1b1f1d;display:block">
+<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border:1px solid #e2e6e4;border-radius:10px;border-collapse:separate"><tr>
+${l.cover ? `<td style="width:120px;padding:0"><img src="${esc(urls.photo(l.cover))}" width="120" height="90" alt="" style="display:block;width:120px;height:90px;object-fit:cover;border-radius:10px 0 0 10px"></td>` : ''}
+<td style="padding:10px 14px;vertical-align:top">
+<div style="font-weight:bold;color:#0b6b3a;font-size:16px">${esc(cedis(l.rent_ghs))}<span style="font-weight:normal;color:#5f6b65;font-size:13px">/month</span></div>
+<div style="font-weight:bold;margin:2px 0">${esc(l.title)}</div>
+<div style="font-size:13px;color:#5f6b65">${esc(l.neighbourhood)} · ${l.bedrooms ? `${l.bedrooms} bed` : 'Single room'} · ${l.advance_months} months advance${l.landlord_verification === 'verified' ? ' · ✔ Verified landlord' : ''}</div>
+</td></tr></table></a></td></tr>`;
+  const html = layout({
+    preheader: `${shown[0].title}: ${cedis(shown[0].rent_ghs)}/month in ${shown[0].neighbourhood}`,
+    unsubscribeUrl,
+    bodyHtml: `<p style="margin:0 0 12px">Hello ${esc(recipientName)},</p>
+<p style="margin:0 0 16px">${n === 1 ? 'A new home matches' : `<strong>${n}</strong> new homes match`} your saved search:<br><strong>${esc(description)}</strong></p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">${shown.map(item).join('')}</table>
+${more > 0 ? `<p style="margin:0 0 16px">…and ${more} more.</p>` : ''}
+${button('See all matches', urls.search)}
+<p style="margin:0;font-size:13px;color:#5f6b65">Good homes go fast, so contact landlords early. Never pay before you've viewed a property.<br>
+<a href="${esc(urls.stop)}" style="color:#5f6b65">Stop alerts for this search</a></p>`,
+  });
+  return { subject, text, html };
+}
+
 module.exports = {
+  savedSearchEmail,
   passwordChangedEmail,
   newMessageEmail, viewingRequestedEmail, viewingStatusEmail, viewingIcs, listingDecisionEmail, verificationEmail, esc,
 };

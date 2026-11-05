@@ -70,6 +70,7 @@ function createApp(db, opts = {}) {
   app.use(require('./routes/listings')(db, ctx));
   app.use(require('./routes/dashboard')(db, ctx));
   app.use(require('./routes/messages')(db, ctx));
+  app.use(require('./routes/savedSearches')(db, ctx));
   app.use('/admin', require('./routes/admin')(db, ctx));
 
   app.get('/healthz', (req, res) => res.json({ ok: true }));

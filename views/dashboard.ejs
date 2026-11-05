@@ -81,6 +81,33 @@
     </table></div>
   <% } else { %><p class="muted">You haven't requested any viewings yet.</p><% } %>
 
+  <h2 class="h3" id="saved-searches">Saved searches</h2>
+  <% if (savedSearches.length) { %>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Search</th><th>Email alerts</th><th></th></tr></thead>
+      <tbody>
+      <% savedSearches.forEach(s => { %>
+        <tr>
+          <td><a href="<%= s.url %>"><%= s.description %></a><% if (s.last_sent_at) { %><br><span class="small muted">Last alert <%= timeAgo(s.last_sent_at) %></span><% } %></td>
+          <td>
+            <form method="post" action="/saved-searches/<%= s.id %>/frequency" class="inline-select">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <select name="frequency" aria-label="Alert frequency">
+                <option value="instant" <%= s.frequency === 'instant' ? 'selected' : '' %>>Right away</option>
+                <option value="daily" <%= s.frequency === 'daily' ? 'selected' : '' %>>Daily summary</option>
+                <option value="off" <%= s.frequency === 'off' ? 'selected' : '' %>>Off</option>
+              </select>
+              <button class="btn btn-ghost btn-sm">Save</button>
+            </form>
+          </td>
+          <td><form method="post" action="/saved-searches/<%= s.id %>/delete" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost btn-sm danger">Delete</button></form></td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+    <% if (!emailEnabled) { %><p class="small muted">Email alerts will start once the site's email service is set up.</p><% } %>
+  <% } else { %><p class="muted">On the <a href="/listings">search page</a>, set your filters and tap “🔔 Save search” to get emailed when new homes match.</p><% } %>
+
   <h2 class="h3">Saved homes</h2>
   <% if (saved.length) { %>
     <div class="grid"><% saved.forEach(l => { %><%- include('partials/card', { l }) %><% }) %></div>

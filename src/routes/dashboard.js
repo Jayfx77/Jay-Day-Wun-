@@ -3,10 +3,12 @@ const { verifyCsrf, requireUser, hashPassword, verifyPassword } = require('../au
 const { normalisePhone, validGhanaCard } = require('../helpers');
 const uploads = require('../uploads');
 const { listingCards } = require('../listingQueries');
+const { createSavedSearches } = require('../savedSearches');
 
 module.exports = (db, { notify, phone: phoneCheck }) => {
   const r = express.Router();
   const cards = listingCards(db);
+  const savedSearches = createSavedSearches(db);
 
   r.get('/dashboard', requireUser, (req, res) => {
     const u = req.user;
@@ -20,6 +22,7 @@ module.exports = (db, { notify, phone: phoneCheck }) => {
       data.enquiries = db.prepare(`SELECT COUNT(*) n FROM conversations WHERE landlord_id = ?`).get(u.id).n;
     }
     data.saved = cards.favorites(u.id);
+    data.savedSearches = savedSearches.list(u.id);
     data.myViewings = db.prepare(`SELECT v.*, l.title listing_title, l.neighbourhood, l.address, l.gps_address,
       ll.name landlord_name, ll.phone landlord_phone
       FROM viewings v JOIN listings l ON l.id = v.listing_id JOIN users ll ON ll.id = l.landlord_id

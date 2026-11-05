@@ -232,3 +232,6 @@ details form { margin-top: 12px; }
 .verify-banner { margin-top: 16px; margin-bottom: 0; }
 .linklike.green { color: var(--green); text-decoration: underline; }
 .code-input { padding: .35em .5em; }
+.save-search { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 16px; margin-bottom: 16px; }
+.save-search-form, .inline-select { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.save-search-form select, .inline-select select { width: auto; padding: .4em .6em; font-size: .875rem; }
