@@ -62,7 +62,7 @@ The repo includes a Render blueprint (`render.yaml`). It sets up a Node web serv
 
 **Cost:** a persistent disk needs a paid instance (the *Starter* plan) plus disk storage. Check Render's pricing page for current prices. Without a disk, every deploy or restart would wipe the database and photos.
 
-**Your own domain:** in the service's **Settings → Custom Domains**, add your domain and create the DNS record Render shows you. HTTPS is set up automatically. Then set `BASE_URL` to `https://your-domain` so links in texts and emails use it.
+**Your own domain:** follow the step-by-step guide in [docs/custom-domain.md](docs/custom-domain.md). It covers buying a domain, adding the DNS records, HTTPS, setting `BASE_URL`, and troubleshooting. Once `BASE_URL` is set, visitors on the `onrender.com` address are redirected to your domain.
 
 **Backups:** Render takes daily snapshots of persistent disks, which you can restore from the **Disks** page. For an extra copy, open the service's **Shell** and run `node -e "require('better-sqlite3')('/var/data/ofie.db').backup('/var/data/backup.db').then(() => console.log('done'))"`, then copy `backup.db` somewhere safe, or schedule your own off-site copies.
 
