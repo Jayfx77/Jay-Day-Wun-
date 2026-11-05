@@ -219,21 +219,39 @@ function listingDecisionEmail({ listing, action, note, recipientName, urls, unsu
   };
 }
 
-// When a landlord is verified, their pending listings go live together; one email lists them all.
-function listingsPublishedEmail({ listings, recipientName, urls, unsubscribeUrl }) {
-  const one = listings.length === 1;
+// ---------- Ghana Card verification result (to landlords) ----------
+// Never includes the Ghana Card number or image.
+function verificationEmail({ status, note, published = [], recipientName, urls, unsubscribeUrl }) {
+  if (status === 'verified') {
+    const n = published.length;
+    let intro = 'Your Ghana Card has been verified. Your listings now show the ✔ verified-landlord badge, and new listings go live as soon as you post them, with no review wait.';
+    if (n) intro += ` ${n === 1 ? 'Your listing that was waiting for review is' : `Your ${n} listings that were waiting for review are`} now live:`;
+    let cta = { label: 'Post a property', url: urls.newListing };
+    if (n === 1) cta = { label: 'View your listing', url: urls.listing(published[0].id) };
+    else if (n > 1) cta = { label: 'Open your dashboard', url: urls.dashboard };
+    return {
+      subject: n ? `You're verified, and ${n === 1 ? 'your listing is' : `${n} listings are`} live` : 'Your Ghana Card is verified',
+      ...card({
+        recipientName, unsubscribeUrl, intro, cta,
+        preheader: 'Your listings now carry the verified-landlord badge.',
+        rows: published.map((l) => [l.neighbourhood, `${l.title} (${cedis(l.rent_ghs)} / month)`]),
+        tip: 'Tenants are more likely to contact verified landlords. Reply to enquiries quickly and keep your listings up to date.',
+      }),
+    };
+  }
   return {
-    subject: one ? `Your listing is live: "${short(listings[0].title)}"` : `Your ${listings.length} listings are live`,
+    subject: "We couldn't verify your Ghana Card",
     ...card({
-      recipientName, unsubscribeUrl, preheader: 'Your Ghana Card is verified and your listings are now public.',
-      intro: `Your Ghana Card has been verified, so ${one ? 'your listing is' : 'these listings are'} now live with the verified-landlord badge. Future listings will go live as soon as you post them.`,
-      rows: listings.map((l) => [l.neighbourhood, `${l.title} (${cedis(l.rent_ghs)} / month)`]),
-      cta: one ? { label: 'View your listing', url: urls.listing(listings[0].id) } : { label: 'Open your dashboard', url: urls.dashboard },
-      tip: 'Tips: reply to enquiries quickly, confirm viewings from your dashboard, and mark listings as rented once you have found a tenant.',
+      recipientName, unsubscribeUrl,
+      preheader: note ? `Reason: ${note}` : 'Please upload your Ghana Card again.',
+      intro: "We couldn't verify your Ghana Card this time. You can still list properties, but each listing will be reviewed before it goes live. Please try again.",
+      rows: [['Reason', note || 'No reason was given. Please contact support if you are unsure what to change.']],
+      cta: { label: 'Upload your Ghana Card again', url: urls.account },
+      tip: 'Make sure: the photo is sharp and all four corners are visible; the card has not expired; the number is typed exactly as printed (GHA-123456789-0); and the name on the card matches your account name.',
     }),
   };
 }
 
 module.exports = {
-  newMessageEmail, viewingRequestedEmail, viewingStatusEmail, viewingIcs, listingDecisionEmail, listingsPublishedEmail, esc,
+  newMessageEmail, viewingRequestedEmail, viewingStatusEmail, viewingIcs, listingDecisionEmail, verificationEmail, esc,
 };

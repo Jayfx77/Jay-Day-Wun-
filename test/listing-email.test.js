@@ -139,13 +139,14 @@ test('taking a listing down emails the reason and support contact', async () => 
   assert.match(m.text, /Contact support: mailto:/);
 });
 
-test('verifying a landlord sends one email listing all newly published listings', async () => {
+test('verifying a landlord sends one email: verified, plus the listings that went live', async () => {
   const yaw = db.prepare("SELECT id FROM users WHERE email = 'yaw@test.gh'").get().id;
   await admin.post(`/admin/users/${yaw}/verification`, { _csrf: acsrf, action: 'verify' });
   await mailer.flush();
   const mails = emailsTo('yaw@test.gh');
   assert.equal(mails.length, 1);
-  assert.equal(mails[0].subject, 'Your 2 listings are live');
+  assert.equal(mails[0].subject, "You're verified, and 2 listings are live");
+  assert.match(mails[0].text, /Your Ghana Card has been verified/);
   assert.match(mails[0].text, /Kasoa: Single room in Kasoa \(GH₵ 450 \/ month\)/);
   assert.match(mails[0].text, /Dansoman: Studio in Dansoman \(GH₵ 900 \/ month\)/);
   assert.match(mails[0].text, /Open your dashboard: /);

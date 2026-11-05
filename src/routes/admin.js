@@ -61,6 +61,10 @@ module.exports = (db, { notify }) => {
     if (!['verify', 'reject'].includes(action)) return done(res, 'Unknown action.');
     const status = action === 'verify' ? 'verified' : 'rejected';
     const note = String(req.body.note || '').trim().slice(0, 500) || null;
+    const target = db.prepare('SELECT verification_status FROM users WHERE id = ?').get(req.params.id);
+    if (!target) return done(res, 'User not found.');
+    // A repeated click (e.g. double submit) shouldn't notify the landlord twice.
+    if (target.verification_status === status) return done(res, `User #${req.params.id} is already ${status}.`);
     const published = status === 'verified'
       ? db.prepare("SELECT id FROM listings WHERE landlord_id = ? AND status = 'pending' ORDER BY id").all(req.params.id).map((l) => l.id)
       : [];
@@ -73,8 +77,7 @@ module.exports = (db, { notify }) => {
           .run(req.params.id);
       }
     })();
-    notify.verificationResult({ userId: Number(req.params.id), status, note });
-    if (published.length) notify.listingsPublished({ landlordId: Number(req.params.id), listingIds: published });
+    notify.verificationResult({ userId: Number(req.params.id), status, note, publishedIds: published });
     done(res, `User #${req.params.id} ${status}.`);
   });
 
