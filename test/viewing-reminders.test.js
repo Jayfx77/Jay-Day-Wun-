@@ -135,3 +135,22 @@ test('people who turned SMS alerts off are not texted; the other person still is
   db.prepare('UPDATE users SET sms_alerts = 1 WHERE id = ?').run(landlord);
   clear(id);
 });
+
+test('request, confirm, decline and cancel texts use the same friendly date', async () => {
+  db.prepare('DELETE FROM sms_log').run();
+  const id = db.prepare('INSERT INTO viewings (listing_id, tenant_id, preferred_date, preferred_time) VALUES (?, ?, ?, ?)')
+    .run(listing, tenant, '2030-03-11', 'morning').lastInsertRowid;
+  const { notify } = app.locals.ctx;
+  notify.viewingRequested({ viewingId: id });
+  notify.viewingStatus({ viewingId: id, status: 'confirmed', byUserId: landlord });
+  notify.viewingStatus({ viewingId: id, status: 'declined', byUserId: landlord });
+  notify.viewingStatus({ viewingId: id, status: 'cancelled', byUserId: tenant });
+  const bodies = db.prepare("SELECT body FROM sms_log WHERE kind = 'viewing' ORDER BY id").all().map((r) => r.body);
+  assert.equal(bodies.length, 4);
+  assert.match(bodies[0], /^Ofie Accra: Kojo Mensah wants to view "2-bed flat in Osu" on Mon 11 Mar, 8am-12pm\. Confirm or decline: /);
+  assert.match(bodies[1], /^Ofie Accra: Ama Owusu CONFIRMED the viewing of "2-bed flat in Osu" on Mon 11 Mar, 8am-12pm\. Details: /);
+  assert.match(bodies[2], /Ama Owusu declined the viewing of "2-bed flat in Osu" on Mon 11 Mar, 8am-12pm\./);
+  assert.match(bodies[3], /Kojo Mensah cancelled the viewing of "2-bed flat in Osu" on Mon 11 Mar, 8am-12pm\./);
+  for (const b of bodies) assert.doesNotMatch(b, /2030-03-11|\(morning\)/);
+  clear(id);
+});

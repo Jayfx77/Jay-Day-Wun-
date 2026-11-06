@@ -1,0 +1,7 @@
+{
+  // VS Code suggests these when you open the project.
+  "recommendations": [
+    "DigitalBrainstem.javascript-ejs-support",
+    "qwtel.sqlite-viewer"
+  ]
+}

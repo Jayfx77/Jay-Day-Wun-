@@ -1,0 +1,23 @@
+{
+  // Run and debug from VS Code: open the "Run and Debug" panel (Ctrl+Shift+D) and press the green ▶.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Start Ofie Accra",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server.js",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Run all tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["test"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

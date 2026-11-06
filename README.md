@@ -54,13 +54,18 @@ Ofie Accra is a web platform where tenants in Accra find homes and deal **direct
 Node.js 20+, Express 5, EJS (server-rendered, works without JavaScript), SQLite via better-sqlite3. There is no separate database server to run.
 
 ## Run locally
+**New to this? Follow the step-by-step guide: [docs/local-setup.md](docs/local-setup.md).** It covers installing the tools, opening the project in VS Code, running the site, the database, tests and debugging.
+
+Quick version (Node.js 22 LTS):
 ```bash
 npm install
-npm run seed     # optional demo data; password for all demo users: demo-password
-npm run dev      # http://localhost:3000
+cp .env.local.example .env   # Windows PowerShell: Copy-Item .env.local.example .env
+npm run seed                 # optional demo data; password for all demo users: demo-password
+npm run dev                  # http://localhost:3000
 npm test
+npm run reset                # wipe local data and start fresh
 ```
-Demo logins after seeding: `admin@demo.local`, `ama@demo.local` (landlord), `esi@demo.local` (tenant).
+Demo logins after seeding: `admin@demo.local`, `ama@demo.local` (landlord), `esi@demo.local` (tenant). Locally, texts (including verification codes) are printed in the terminal instead of being sent.
 
 ## Deploy on Render
 The repo includes a Render blueprint (`render.yaml`). It sets up a Node web service in Frankfurt (the closest Render region to Ghana), with a 5 GB persistent disk at `/var/data` for the database and photos, and health checks on `/healthz`.

@@ -1,5 +1,7 @@
 // Usage: node scripts/create-admin.js "Full Name" admin@example.com 0241234567 'StrongPassword'
 // Or set ADMIN_EMAIL / ADMIN_PASSWORD (and optionally ADMIN_NAME, ADMIN_PHONE) and start the server.
+// When run directly, read .env first (before any settings are loaded).
+if (require.main === module) require('../src/loadEnv');
 const { hashPassword } = require('../src/auth');
 const { normalisePhone } = require('../src/helpers');
 

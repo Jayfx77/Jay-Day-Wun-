@@ -1,5 +1,6 @@
 // Demo data for local development ONLY. Do not run against a production database.
 // Usage: npm run seed            (all demo accounts use the password "demo-password")
+require('../src/loadEnv');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');

@@ -121,7 +121,7 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
       const v = getViewing.get(viewingId);
       if (!v) return;
       alert(v.landlord_id, 'viewing', v.id,
-        `${site}: ${shorten(v.tenant_name, 30)} wants to view "${shorten(v.listing_title, 40)}" on ${v.preferred_date} (${v.preferred_time}). Confirm or decline: ${url('/dashboard')}`);
+        `${site}: ${shorten(v.tenant_name, 30)} wants to view "${shorten(v.listing_title, 40)}" on ${shortViewingTime(v.preferred_date, v.preferred_time)}. Confirm or decline: ${url('/dashboard')}`);
       email(v.landlord_id, 'viewing', v.id, (u, unsub) => viewingRequestedEmail({
         v, recipientName: u.name.split(' ')[0], dashboardUrl: url('/dashboard'), unsubscribeUrl: unsub,
       }));
@@ -152,7 +152,7 @@ function createNotifier(db, sms, mailer = { enabled: false }) {
       const verb = { confirmed: 'CONFIRMED', declined: 'declined', cancelled: 'cancelled' }[status];
       if (!verb) return;
       alert(toUserId, 'viewing', v.id,
-        `${site}: ${shorten(byName, 30)} ${verb} the viewing of "${shorten(v.listing_title, 40)}" on ${v.preferred_date} (${v.preferred_time}). Details: ${url('/dashboard')}`);
+        `${site}: ${shorten(byName, 30)} ${verb} the viewing of "${shorten(v.listing_title, 40)}" on ${shortViewingTime(v.preferred_date, v.preferred_time)}. Details: ${url('/dashboard')}`);
       email(toUserId, 'viewing', v.id, (u, unsub) => viewingStatusEmail({
         v, status, toTenant: byLandlord, byName, recipientName: u.name.split(' ')[0], unsubscribeUrl: unsub, uidHost,
         urls: { dashboard: url('/dashboard'), similar: url(`/listings?area=${encodeURIComponent(v.neighbourhood)}`) },
